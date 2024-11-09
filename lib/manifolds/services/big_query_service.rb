@@ -14,16 +14,16 @@ module Manifolds
         return unless validate_config_exists(config_path, project_name)
 
         config = YAML.safe_load_file(config_path)
-        dimensions = []
+        fields = []
 
         # Load vector schemas
         config["vectors"]&.each do |vector|
           @logger.info("Loading vector schema for '#{vector}'.")
           vector_schema = @vector_service.load_vector_schema(vector)
-          dimensions << vector_schema if vector_schema
+          fields << vector_schema if vector_schema
         end
 
-        create_dimensions_file(project_name, dimensions)
+        create_dimensions_file(project_name, fields)
       end
 
       private
@@ -36,18 +36,19 @@ module Manifolds
         true
       end
 
-      def create_dimensions_file(project_name, dimensions)
+      def create_dimensions_file(project_name, fields)
         tables_directory(project_name).mkpath
+        dimensions = dimensions_schema(fields)
 
-        File.write(dimensions_file(project_name), dimensions_schema(dimensions))
+        File.write(dimensions_file(project_name), dimensions)
         @logger.info("Generated BigQuery dimensions table schema for '#{project_name}'.")
       end
 
-      def dimensions_schema(dimensions)
+      def dimensions_schema(fields)
         JSON.pretty_generate([
                                { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
                                { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED",
-                                 "fields" => dimensions }
+                                 "fields" => fields }
                              ]).concat("\n")
       end
 
