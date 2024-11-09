@@ -8,7 +8,7 @@ RSpec.describe Manifolds::Services::BigQueryService do
   let(:logger) { instance_spy(Logger) }
   let(:service) { described_class.new(logger) }
   let(:project_name) { "test_project" }
-  let(:dimensions_file) do
+  let(:dimensions_path) do
     Pathname.pwd.join("projects", project_name, "bq", "tables", "dimensions.json")
   end
 
@@ -36,11 +36,11 @@ RSpec.describe Manifolds::Services::BigQueryService do
       end
 
       it "generates a dimensions schema file" do
-        expect(dimensions_file.file?).to be true
+        expect(dimensions_path.file?).to be true
       end
 
       it "includes the expected schema structure" do
-        schema = JSON.parse(File.read(dimensions_file))
+        schema = JSON.parse(File.read(dimensions_path))
         expect(schema).to include({ "type" => "STRING", "name" => "id", "mode" => "REQUIRED" })
       end
     end

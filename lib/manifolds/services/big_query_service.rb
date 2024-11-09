@@ -40,7 +40,7 @@ module Manifolds
         tables_directory(project_name).mkpath
         dimensions = dimensions_schema(fields)
 
-        File.write(dimensions_file(project_name), dimensions)
+        File.write(dimensions_path(project_name), dimensions)
         @logger.info("Generated BigQuery dimensions table schema for '#{project_name}'.")
       end
 
@@ -56,7 +56,7 @@ module Manifolds
         Pathname.pwd.join("projects", project_name, "bq", "tables")
       end
 
-      def dimensions_file(project_name)
+      def dimensions_path(project_name)
         tables_directory(project_name).join("dimensions.json")
       end
     end
