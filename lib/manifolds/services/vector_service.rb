@@ -9,7 +9,7 @@ module Manifolds
       end
 
       def load_vector_schema(vector_name)
-        path = File.join(Dir.pwd, "vectors", "#{vector_name.downcase}.yml")
+        path = config_path(vector_name)
         unless File.exist?(path)
           @logger.error("Vector configuration not found: #{path}")
           return nil
@@ -30,6 +30,10 @@ module Manifolds
             "mode" => "NULLABLE"
           }
         end
+      end
+
+      def config_path(vector_name)
+        Pathname.pwd.join("vectors", "#{vector_name.downcase}.yml")
       end
     end
   end

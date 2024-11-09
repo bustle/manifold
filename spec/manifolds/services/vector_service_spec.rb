@@ -55,7 +55,7 @@ RSpec.describe Manifolds::Services::VectorService do
       end
 
       it "logs an error message" do
-        path = File.join(Dir.pwd, "vectors", "#{vector_name}.yml")
+        path = Pathname.pwd.join("vectors", "#{vector_name}.yml")
         service.load_vector_schema(vector_name)
 
         expect(logger).to have_received(:error)
