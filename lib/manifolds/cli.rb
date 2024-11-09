@@ -49,12 +49,12 @@ module Manifolds
 
     desc "generate PROJECT_NAME SERVICE", "Generate services for a project"
     def generate(project_name, service)
-      # case service
-      # when "bq"
-      #   bq_service.generate_dimensions_schema(project_name)
-      # else
-      #   logger.error("Unsupported service: #{service}")
-      # end
+      case service
+      when "bq"
+        bq_service.generate_dimensions_schema(project_name)
+      else
+        logger.error("Unsupported service: #{service}")
+      end
     end
   end
 end
