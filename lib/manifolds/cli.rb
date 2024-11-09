@@ -17,7 +17,7 @@ module Manifolds
 
     desc "init NAME", "Generate a new umbrella project for data management"
     def init(name)
-      Manifolds::API::Project.new(name).init
+      Manifolds::API::Project.create(name)
       logger.info "Created umbrella project '#{name}' with projects and vectors directories."
     end
 

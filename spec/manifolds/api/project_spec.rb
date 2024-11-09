@@ -9,8 +9,8 @@ RSpec.describe Manifolds::API::Project do
 
   it { is_expected.to have_attributes(name: name) }
 
-  describe ".init" do
-    before { project.init }
+  describe ".create" do
+    before { described_class.create(name) }
 
     it "creates the vectors directory" do
       expect(project.vectors_directory).to be_directory

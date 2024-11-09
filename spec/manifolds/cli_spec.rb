@@ -23,16 +23,12 @@ RSpec.describe Manifolds::CLI do
 
     context "when initializing a new project" do
       before do
-        allow(mock_project).to receive(:init)
+        allow(Manifolds::API::Project).to receive(:create).and_return(mock_project)
         cli.init(project_name)
       end
 
-      it "instantiates a new project through the API" do
-        expect(Manifolds::API::Project).to have_received(:new).with(project_name)
-      end
-
-      it "initializes the project through the API" do
-        expect(mock_project).to have_received(:init)
+      it "creates a new project through the API" do
+        expect(Manifolds::API::Project).to have_received(:create).with(project_name)
       end
 
       it "logs the project creation" do

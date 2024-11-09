@@ -11,8 +11,10 @@ module Manifolds
         self.directory = Pathname(directory)
       end
 
-      def init
-        [workspaces_directory, vectors_directory].each(&:mkpath)
+      def self.create(name, directory: Pathname.pwd.join(name))
+        new(name, directory: directory).tap do |project|
+          [project.workspaces_directory, project.vectors_directory].each(&:mkpath)
+        end
       end
 
       def workspaces_directory
