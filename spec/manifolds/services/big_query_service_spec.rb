@@ -20,13 +20,13 @@ RSpec.describe Manifolds::Services::BigQueryService do
     context "when the project configuration exists" do
       before do
         Pathname.pwd.join("vectors").mkpath
-        File.write(Pathname.pwd.join("vectors", "user.yml"), <<~YAML)
+        Pathname.pwd.join("vectors", "user.yml").write(<<~YAML)
           attributes:
             user_id: string
             email: string
         YAML
 
-        File.write(Pathname.pwd.join("projects", project_name, "manifold.yml"), <<~YAML)
+        Pathname.pwd.join("projects", project_name, "manifold.yml").write(<<~YAML)
           vectors:
             - User
         YAML
@@ -39,7 +39,7 @@ RSpec.describe Manifolds::Services::BigQueryService do
       end
 
       it "includes the expected schema structure" do
-        schema = JSON.parse(File.read(dimensions_path))
+        schema = JSON.parse(dimensions_path.read)
         expect(schema).to include({ "type" => "STRING", "name" => "id", "mode" => "REQUIRED" })
       end
     end

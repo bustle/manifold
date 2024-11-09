@@ -34,7 +34,7 @@ RSpec.describe Manifolds::Services::VectorService do
       before do
         Pathname.pwd.join("vectors").mkpath
         config_path = Pathname.pwd.join("vectors", "#{vector_name}.yml")
-        File.write(config_path, YAML.dump(vector_config))
+        config_path.write(YAML.dump(vector_config))
       end
 
       it "loads and transforms vector schema" do

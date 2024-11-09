@@ -4,8 +4,8 @@ RSpec.shared_context "with template files" do
   before do
     template_dir.mkpath
 
-    File.write(workspace_template_path, "vectors:\nmetrics:")
-    File.write(vector_template_path, "attributes:")
+    workspace_template_path.write("vectors:\nmetrics:")
+    vector_template_path.write("attributes:")
   end
 
   def template_dir

@@ -40,7 +40,7 @@ module Manifolds
         tables_directory(project_name).mkpath
         dimensions = dimensions_schema(fields)
 
-        File.write(dimensions_path(project_name), dimensions)
+        dimensions_path(project_name).write(dimensions)
         @logger.info("Generated BigQuery dimensions table schema for '#{project_name}'.")
       end
 
