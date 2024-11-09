@@ -12,8 +12,13 @@ RSpec.describe Manifolds::API::Project do
   describe ".init" do
     before { project.init }
 
-    it { expect(project.vectors_directory).to be_directory }
-    it { expect(project.workspaces_directory).to be_directory }
+    it "creates the vectors directory" do
+      expect(project.vectors_directory).to be_directory
+    end
+
+    it "creates the workspaces directory" do
+      expect(project.workspaces_directory).to be_directory
+    end
   end
 
   describe ".workspaces_directory" do
