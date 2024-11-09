@@ -6,22 +6,21 @@ module Manifolds
     class Project
       attr_reader :name, :directory
 
-      def initialize(name, directory: Pathname.new(File.join(Dir.pwd, name)))
+      def initialize(name, directory: Pathname(File.join(Dir.pwd, name)))
         self.name = name
         self.directory = directory
       end
 
       def init
-        FileUtils.mkdir_p(workspaces_directory)
-        FileUtils.mkdir_p(vectors_directory)
+        [workspaces_directory, vectors_directory].each(&:mkpath)
       end
 
       def workspaces_directory
-        Pathname.new(directory).join("workspaces")
+        directory.join("workspaces")
       end
 
       def vectors_directory
-        Pathname.new(directory).join("vectors")
+        directory.join("vectors")
       end
 
       private

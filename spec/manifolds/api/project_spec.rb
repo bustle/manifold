@@ -27,7 +27,7 @@ RSpec.describe Manifolds::API::Project do
   context "with directory" do
     subject(:project) { described_class.new(name, directory: directory) }
 
-    let(:directory) { Pathname.new(File.join(Dir.pwd, "supplied_directory")) }
+    let(:directory) { Pathname(File.join(Dir.pwd, "supplied_directory")) }
 
     it { is_expected.to have_attributes(directory: directory) }
   end

@@ -18,17 +18,16 @@ module Manifolds
       end
 
       def add
-        Pathname.new(tables_directory).mkpath
-        Pathname.new(routines_directory).mkpath
+        [tables_directory, routines_directory].each(&:mkpath)
         FileUtils.cp(template_path, manifold_path)
       end
 
       def tables_directory
-        Pathname.new(project.workspaces_directory).join(name, "tables")
+        project.workspaces_directory.join(name, "tables")
       end
 
       def routines_directory
-        Pathname.new(project.workspaces_directory).join(name, "routines")
+        project.workspaces_directory.join(name, "routines")
       end
 
       def manifold_file
@@ -42,7 +41,7 @@ module Manifolds
       end
 
       def manifold_path
-        Pathname.new(project.workspaces_directory).join(name, "manifold.yml")
+        project.workspaces_directory.join(name, "manifold.yml")
       end
 
       private
