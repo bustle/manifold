@@ -29,7 +29,7 @@ module Manifolds
       private
 
       def validate_config_exists(config_path, project_name)
-        unless File.exist?(config_path)
+        unless config_path.file?
           @logger.error("Config file missing for project '#{project_name}'.")
           return false
         end

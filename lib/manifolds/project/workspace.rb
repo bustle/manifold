@@ -37,7 +37,7 @@ module Manifolds
       end
 
       def manifold_exists?
-        File.exist? manifold_path
+        manifold_path.file?
       end
 
       def manifold_path

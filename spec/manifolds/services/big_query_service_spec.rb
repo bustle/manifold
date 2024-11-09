@@ -36,7 +36,7 @@ RSpec.describe Manifolds::Services::BigQueryService do
       end
 
       it "generates a dimensions schema file" do
-        expect(File.exist?(dimensions_file)).to be true
+        expect(dimensions_file.file?).to be true
       end
 
       it "includes the expected schema structure" do

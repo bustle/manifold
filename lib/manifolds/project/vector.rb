@@ -34,11 +34,7 @@ module Manifolds
       attr_writer :name, :project, :config_template_path
 
       def config_file_path
-        project.directory.join("vectors", config_file_name)
-      end
-
-      def config_file_name
-        "#{name.downcase}.yml"
+        project.directory.join("vectors", "#{name.downcase}.yml")
       end
     end
   end

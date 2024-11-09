@@ -10,7 +10,7 @@ module Manifolds
 
       def load_vector_schema(vector_name)
         path = config_path(vector_name)
-        unless File.exist?(path)
+        unless path.file?
           @logger.error("Vector configuration not found: #{path}")
           return nil
         end
