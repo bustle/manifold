@@ -9,16 +9,11 @@ RSpec.describe Manifolds::Services::BigQueryService do
   let(:service) { described_class.new(logger) }
   let(:project_name) { "test_project" }
   let(:dimensions_file) do
-    File.join(Dir.pwd, "projects", project_name, "bq", "tables", "dimensions.json")
+    Pathname.pwd.join("projects", project_name, "bq", "tables", "dimensions.json")
   end
 
   before do
-    FakeFS.activate!
-    FileUtils.mkdir_p(File.join(Dir.pwd, "projects", project_name))
-  end
-
-  after do
-    FakeFS.deactivate!
+    Pathname.pwd.join("projects", project_name).mkpath
   end
 
   describe "#generate_dimensions_schema" do
