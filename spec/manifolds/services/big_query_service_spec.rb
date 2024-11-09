@@ -19,7 +19,6 @@ RSpec.describe Manifolds::Services::BigQueryService do
   describe "#generate_dimensions_schema" do
     context "when the project configuration exists" do
       before do
-        # Create a test configuration
         Pathname.pwd.join("vectors").mkpath
         File.write(Pathname.pwd.join("vectors", "user.yml"), <<~YAML)
           attributes:
