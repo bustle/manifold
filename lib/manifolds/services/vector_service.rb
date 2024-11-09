@@ -15,7 +15,7 @@ module Manifolds
           return nil
         end
 
-        config = YAML.load_file(path)
+        config = YAML.safe_load_file(path)
         fields = transform_attributes_to_schema(config["attributes"])
         { "name" => vector_name.downcase, "type" => "RECORD", "fields" => fields }
       end
