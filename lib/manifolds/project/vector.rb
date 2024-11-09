@@ -18,7 +18,7 @@ module Manifolds
 
       def add
         directory.mkpath
-        FileUtils.cp(template_path, config_file_path)
+        FileUtils.cp(template_path, config_path)
       end
 
       private
@@ -29,7 +29,7 @@ module Manifolds
         project.directory.join("vectors")
       end
 
-      def config_file_path
+      def config_path
         directory.join("#{name.downcase}.yml")
       end
     end
