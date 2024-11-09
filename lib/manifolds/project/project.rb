@@ -8,7 +8,7 @@ module Manifolds
 
       def initialize(name, directory: Pathname.pwd.join(name))
         self.name = name
-        self.directory = directory
+        self.directory = Pathname(directory)
       end
 
       def init
