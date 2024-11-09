@@ -3,7 +3,6 @@
 RSpec.describe Manifolds::CLI do
   include FakeFS::SpecHelpers
 
-  let(:workspace_name) { "Commerce" }
   let(:null_logger) { instance_double(Logger) }
   let(:mock_project) { instance_double(Manifolds::API::Project) }
   let(:mock_workspace) { instance_double(Manifolds::API::Workspace) }
@@ -42,6 +41,8 @@ RSpec.describe Manifolds::CLI do
   describe "#add" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
+    let(:workspace_name) { "Commerce" }
+
     context "when adding a workspace" do
       before do
         allow(mock_workspace).to receive(:add)
@@ -65,10 +66,12 @@ RSpec.describe Manifolds::CLI do
   end
 
   describe "vectors#add" do
-    subject(:cli) { vectors_command.new(logger: null_logger) }
+    subject(:cli) do
+      subcommands = described_class.new.class.subcommand_classes
+      subcommands["vectors"].new(logger: null_logger)
+    end
 
     let(:vector_name) { "page" }
-    let(:vectors_command) { described_class.new.class.subcommand_classes["vectors"] }
 
     context "when adding a vector" do
       before do
