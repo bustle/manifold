@@ -30,5 +30,13 @@ RSpec.describe Manifolds::API::Project do
     let(:directory) { Pathname.pwd.join("supplied_directory") }
 
     it { is_expected.to have_attributes(directory: directory) }
+
+    it "uses it as the base for the vectors directory" do
+      expect(project.vectors_directory).to eq directory.join("vectors")
+    end
+
+    it "uses it as the base for the workspaces directory" do
+      expect(project.workspaces_directory).to eq directory.join("workspaces")
+    end
   end
 end
