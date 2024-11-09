@@ -22,11 +22,11 @@ module Manifolds
       end
 
       def tables_directory
-        Pathname(File.join(project.vectors_directory, "tables"))
+        project.vectors_directory.join("tables")
       end
 
       def routines_directory
-        Pathname(File.join(project.vectors_directory, "routines"))
+        project.vectors_directory.join("routines")
       end
 
       private

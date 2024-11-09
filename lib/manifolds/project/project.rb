@@ -6,7 +6,7 @@ module Manifolds
     class Project
       attr_reader :name, :directory
 
-      def initialize(name, directory: Pathname(File.join(Dir.pwd, name)))
+      def initialize(name, directory: Pathname.pwd.join(name))
         self.name = name
         self.directory = directory
       end
