@@ -13,7 +13,7 @@ module Manifolds
         config_path = File.join(Dir.pwd, "projects", project_name, "manifold.yml")
         return unless validate_config_exists(config_path, project_name)
 
-        config = YAML.load_file(config_path)
+        config = YAML.safe_load_file(config_path)
         dimensions = []
 
         # Load vector schemas
