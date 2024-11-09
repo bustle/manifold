@@ -6,9 +6,9 @@ module Manifolds
     class Vector
       attr_reader :name, :project, :config_template_path
 
-      DEFAULT_CONFIG_TEMPLATE_PATH = File.join(
-        Dir.pwd, "lib", "manifolds", "templates", "vector_template.yml"
-      )
+      DEFAULT_CONFIG_TEMPLATE_PATH = Pathname.pwd.join(
+        "lib", "manifolds", "templates", "vector_template.yml"
+      ).freeze
 
       def initialize(name, project:, config_template_path: DEFAULT_CONFIG_TEMPLATE_PATH)
         self.name = name
