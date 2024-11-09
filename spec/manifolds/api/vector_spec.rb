@@ -21,17 +21,9 @@ RSpec.describe Manifolds::API::Vector do
   describe ".add" do
     before { vector.add }
 
-    it { expect(vector.routines_directory).to be_directory }
-    it { expect(vector.tables_directory).to be_directory }
-    it { expect(File).to exist(vector.config_template_path) }
-  end
-
-  describe ".routines_directory" do
-    it { expect(vector.routines_directory).to be_an_instance_of(Pathname) }
-  end
-
-  describe ".tables_directory" do
-    it { expect(vector.tables_directory).to be_an_instance_of(Pathname) }
+    it "creates the config template file" do
+      expect(File).to exist(vector.config_template_path)
+    end
   end
 
   describe ".config_template_path" do

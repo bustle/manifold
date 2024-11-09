@@ -21,9 +21,17 @@ RSpec.describe Manifolds::API::Workspace do
   describe ".add" do
     before { workspace.add }
 
-    it { expect(workspace.routines_directory).to be_directory }
-    it { expect(workspace.tables_directory).to be_directory }
-    it { expect(File).to exist(workspace.manifold_path) }
+    it "creates the routines directory" do
+      expect(workspace.routines_directory).to be_directory
+    end
+
+    it "creates the tables directory" do
+      expect(workspace.tables_directory).to be_directory
+    end
+
+    it "creates the manifold file" do
+      expect(File).to exist(workspace.manifold_path)
+    end
   end
 
   describe ".routines_directory" do

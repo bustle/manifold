@@ -17,24 +17,20 @@ module Manifolds
       end
 
       def add
-        [routines_directory, tables_directory].each(&:mkpath)
+        directory.mkpath
         FileUtils.cp(config_template_path, config_file_path)
-      end
-
-      def tables_directory
-        project.vectors_directory.join("tables")
-      end
-
-      def routines_directory
-        project.vectors_directory.join("routines")
       end
 
       private
 
       attr_writer :name, :project, :config_template_path
 
+      def directory
+        project.directory.join("vectors")
+      end
+
       def config_file_path
-        project.directory.join("vectors", "#{name.downcase}.yml")
+        directory.join("#{name.downcase}.yml")
       end
     end
   end
