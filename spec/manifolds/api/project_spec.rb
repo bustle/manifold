@@ -7,9 +7,7 @@ RSpec.describe Manifolds::API::Project do
 
   let(:name) { "wetland" }
 
-  describe ".initialize" do
-    it { is_expected.to have_attributes(name: name) }
-  end
+  it { is_expected.to have_attributes(name: name) }
 
   describe ".init" do
     before { project.init }

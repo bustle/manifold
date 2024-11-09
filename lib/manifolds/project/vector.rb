@@ -13,12 +13,11 @@ module Manifolds
       def initialize(name, project:, config_template_path: DEFAULT_CONFIG_TEMPLATE_PATH)
         self.name = name
         self.project = project
-        self.config_template_path = Pathname.new(config_template_path)
+        self.config_template_path = Pathname(config_template_path)
       end
 
       def add
-        Pathname.new(tables_directory).mkpath
-        Pathname.new(routines_directory).mkpath
+        [routines_directory, tables_directory].each(&:mkpath)
         FileUtils.cp(config_template_path, config_file_path)
       end
 
@@ -30,13 +29,17 @@ module Manifolds
         Pathname.new(File.join(project.vectors_directory, "routines"))
       end
 
-      def config_file_path
-        Pathname.new(project.directory).join("vectors", "#{name.downcase}.yml")
-      end
-
       private
 
       attr_writer :name, :project, :config_template_path
+
+      def config_file_path
+        project.directory.join("vectors", config_file_name)
+      end
+
+      def config_file_name
+        "#{name.downcase}.yml"
+      end
     end
   end
 end
