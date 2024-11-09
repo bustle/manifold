@@ -3,7 +3,6 @@
 RSpec.describe Manifolds::CLI do
   include FakeFS::SpecHelpers
 
-  let(:project_name) { "wetland" }
   let(:workspace_name) { "Commerce" }
   let(:null_logger) { instance_double(Logger) }
   let(:mock_project) { instance_double(Manifolds::API::Project) }
@@ -20,6 +19,8 @@ RSpec.describe Manifolds::CLI do
 
   describe "#init" do
     subject(:cli) { described_class.new(logger: null_logger) }
+
+    let(:project_name) { "wetland" }
 
     context "when initializing a new project" do
       before do
