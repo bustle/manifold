@@ -5,56 +5,64 @@ RSpec.describe Manifolds::CLI do
 
   let(:project_name) { "wetland" }
   let(:workspace_name) { "Commerce" }
-  let(:null_logger) { Logger.new(File::NULL) }
+  let(:null_logger) { instance_double(Logger) }
+  let(:mock_project) { instance_double(Manifolds::API::Project) }
+  let(:mock_workspace) { instance_double(Manifolds::API::Workspace) }
+  let(:mock_vector) { instance_double(Manifolds::API::Vector) }
 
   before do
-    # Set up any template files that need to exist
-    FileUtils.mkdir_p("#{File.dirname(__FILE__)}/../../lib/manifolds/templates")
-    File.write("#{File.dirname(__FILE__)}/../../lib/manifolds/templates/workspace_template.yml", "vectors:\nmetrics:")
-    File.write("#{File.dirname(__FILE__)}/../../lib/manifolds/templates/vector_template.yml", "attributes:")
+    allow(Manifolds::API::Project).to receive(:new).and_return(mock_project)
+    allow(Manifolds::API::Workspace).to receive(:new).and_return(mock_workspace)
+    allow(Manifolds::API::Vector).to receive(:new).and_return(mock_vector)
+    allow(null_logger).to receive(:info)
+    allow(null_logger).to receive(:level=)
   end
 
   describe "#init" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
     context "when initializing a new project" do
-      after { cli.init(project_name) }
+      before do
+        allow(mock_project).to receive(:init)
+        cli.init(project_name)
+      end
 
-      it { expect(null_logger).to receive(:info) }
+      it "instantiates a new project through the API" do
+        expect(Manifolds::API::Project).to have_received(:new).with(project_name)
+      end
 
-      it "figures out how to check it interacted with the API?"
+      it "initializes the project through the API" do
+        expect(mock_project).to have_received(:init)
+      end
+
+      it "logs the project creation" do
+        expect(null_logger).to have_received(:info)
+          .with("Created umbrella project '#{project_name}' with projects and vectors directories.")
+      end
     end
   end
 
   describe "#add" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
-    context "when adding a workspace within a project" do
+    context "when adding a workspace" do
       before do
-        FileUtils.mkdir_p("#{project_name}/workspaces")
+        allow(mock_workspace).to receive(:add)
         cli.add(workspace_name)
       end
 
-      after { Dir.chdir("..") }
-
-      let(:workspace_path) { File.join(Dir.pwd, "workspaces", workspace_name) }
-
-      it "creates a 'tables' directory" do
-        expect(Pathname.new(workspace_path).join("tables")).to be_directory
+      it "instantiates a new workspace through the API" do
+        expect(Manifolds::API::Workspace).to have_received(:new)
+          .with(workspace_name, project: mock_project)
       end
 
-      it "creates a 'routines' directory" do
-        expect(Pathname.new(workspace_path).join("routines")).to be_directory
+      it "adds the workspace through the API" do
+        expect(mock_workspace).to have_received(:add)
       end
 
-      it "adds vectors to the project's manifold configuration" do
-        config = YAML.safe_load_file(File.join(workspace_path, "manifold.yml"))
-        expect(config).to have_key("vectors")
-      end
-
-      it "adds metrics to the project's manifold configuration" do
-        config = YAML.safe_load_file(File.join(workspace_path, "manifold.yml"))
-        expect(config).to have_key("metrics")
+      it "logs the workspace creation" do
+        expect(null_logger).to have_received(:info)
+          .with("Added workspace '#{workspace_name}' with tables and routines directories.")
       end
     end
   end
@@ -62,18 +70,27 @@ RSpec.describe Manifolds::CLI do
   describe "vectors#add" do
     subject(:cli) { vectors_command.new(logger: null_logger) }
 
-    let(:project) { Manifolds::API::Project.new("wetland") }
     let(:vector_name) { "page" }
     let(:vectors_command) { described_class.new.class.subcommand_classes["vectors"] }
 
-    context "when adding a vector within an umbrella project" do
+    context "when adding a vector" do
       before do
+        allow(mock_vector).to receive(:add)
         cli.add(vector_name)
       end
 
-      it "creates a vector configuration file with 'attributes'" do
-        config = YAML.safe_load_file(File.join(Dir.pwd, "vectors", "page.yml"))
-        expect(config).to have_key("attributes")
+      it "instantiates a new vector through the API" do
+        expect(Manifolds::API::Vector).to have_received(:new)
+          .with(vector_name, project: mock_project)
+      end
+
+      it "adds the vector through the API" do
+        expect(mock_vector).to have_received(:add)
+      end
+
+      it "logs the vector creation" do
+        expect(null_logger).to have_received(:info)
+          .with("Created vector configuration for '#{vector_name}'.")
       end
     end
   end
