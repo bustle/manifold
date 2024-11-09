@@ -4,26 +4,26 @@ module Manifolds
   module API
     # Describes the entities for whom metrics are calculated.
     class Vector
-      attr_reader :name, :project, :config_template_path
+      attr_reader :name, :project, :template_path
 
-      DEFAULT_CONFIG_TEMPLATE_PATH = Pathname.pwd.join(
+      DEFAULT_TEMPLATE_PATH = Pathname.pwd.join(
         "lib", "manifolds", "templates", "vector_template.yml"
       ).freeze
 
-      def initialize(name, project:, config_template_path: DEFAULT_CONFIG_TEMPLATE_PATH)
+      def initialize(name, project:, template_path: DEFAULT_TEMPLATE_PATH)
         self.name = name
         self.project = project
-        self.config_template_path = Pathname(config_template_path)
+        self.template_path = Pathname(template_path)
       end
 
       def add
         directory.mkpath
-        FileUtils.cp(config_template_path, config_file_path)
+        FileUtils.cp(template_path, config_file_path)
       end
 
       private
 
-      attr_writer :name, :project, :config_template_path
+      attr_writer :name, :project, :template_path
 
       def directory
         project.directory.join("vectors")

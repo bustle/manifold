@@ -22,11 +22,11 @@ RSpec.describe Manifolds::API::Vector do
     before { vector.add }
 
     it "creates the config template file" do
-      expect(File).to exist(vector.config_template_path)
+      expect(File).to exist(vector.template_path)
     end
   end
 
-  describe ".config_template_path" do
-    it { expect(vector.config_template_path).to be_an_instance_of(Pathname) }
+  describe ".template_path" do
+    it { expect(vector.template_path).to be_an_instance_of(Pathname) }
   end
 end
