@@ -20,14 +20,14 @@ RSpec.describe Manifolds::Services::BigQueryService do
     context "when the project configuration exists" do
       before do
         # Create a test configuration
-        FileUtils.mkdir_p(File.join(Dir.pwd, "vectors"))
-        File.write(File.join(Dir.pwd, "vectors", "user.yml"), <<~YAML)
+        Pathname.pwd.join("vectors").mkpath
+        File.write(Pathname.pwd.join("vectors", "user.yml"), <<~YAML)
           attributes:
             user_id: string
             email: string
         YAML
 
-        File.write(File.join(Dir.pwd, "projects", project_name, "manifold.yml"), <<~YAML)
+        File.write(Pathname.pwd.join("projects", project_name, "manifold.yml"), <<~YAML)
           vectors:
             - User
         YAML

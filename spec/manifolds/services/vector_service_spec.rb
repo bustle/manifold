@@ -32,11 +32,8 @@ RSpec.describe Manifolds::Services::VectorService do
 
     context "when vector configuration exists" do
       before do
-        FileUtils.mkdir_p(File.join(Dir.pwd, "vectors"))
-        File.write(
-          File.join(Dir.pwd, "vectors", "#{vector_name}.yml"),
-          YAML.dump(vector_config)
-        )
+        Pathname.pwd.join("vectors").mkpath
+        File.write(Pathname.pwd.join("vectors", "#{vector_name}.yml"), YAML.dump(vector_config))
       end
 
       it "loads and transforms vector schema" do
