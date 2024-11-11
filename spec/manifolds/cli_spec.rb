@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-RSpec.describe Manifolds::CLI do
+RSpec.describe Manifold::CLI do
   include FakeFS::SpecHelpers
 
   let(:null_logger) { instance_double(Logger) }
-  let(:mock_project) { instance_double(Manifolds::API::Project) }
-  let(:mock_workspace) { instance_double(Manifolds::API::Workspace) }
-  let(:mock_vector) { instance_double(Manifolds::API::Vector) }
+  let(:mock_project) { instance_double(Manifold::API::Project) }
+  let(:mock_workspace) { instance_double(Manifold::API::Workspace) }
+  let(:mock_vector) { instance_double(Manifold::API::Vector) }
 
   before do
-    allow(Manifolds::API::Project).to receive(:new).and_return(mock_project)
-    allow(Manifolds::API::Workspace).to receive(:new).and_return(mock_workspace)
-    allow(Manifolds::API::Vector).to receive(:new).and_return(mock_vector)
+    allow(Manifold::API::Project).to receive(:new).and_return(mock_project)
+    allow(Manifold::API::Workspace).to receive(:new).and_return(mock_workspace)
+    allow(Manifold::API::Vector).to receive(:new).and_return(mock_vector)
     allow(null_logger).to receive(:info)
     allow(null_logger).to receive(:level=)
   end
@@ -23,12 +23,12 @@ RSpec.describe Manifolds::CLI do
 
     context "when initializing a new project" do
       before do
-        allow(Manifolds::API::Project).to receive(:create).and_return(mock_project)
+        allow(Manifold::API::Project).to receive(:create).and_return(mock_project)
       end
 
       it "creates a new project through the API" do
         cli.init(project_name)
-        expect(Manifolds::API::Project).to have_received(:create).with(project_name)
+        expect(Manifold::API::Project).to have_received(:create).with(project_name)
       end
 
       it "logs the project creation" do
@@ -51,7 +51,7 @@ RSpec.describe Manifolds::CLI do
       end
 
       it "instantiates a new workspace through the API" do
-        expect(Manifolds::API::Workspace).to have_received(:new)
+        expect(Manifold::API::Workspace).to have_received(:new)
           .with(workspace_name, project: mock_project)
       end
 
@@ -81,7 +81,7 @@ RSpec.describe Manifolds::CLI do
       end
 
       it "instantiates a new vector through the API" do
-        expect(Manifolds::API::Vector).to have_received(:new)
+        expect(Manifold::API::Vector).to have_received(:new)
           .with(vector_name, project: mock_project)
       end
 

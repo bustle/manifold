@@ -1,18 +1,18 @@
 ![manifold](https://github.com/bustle/manifolds/assets/8030836/be7f24f6-27b9-4924-8e1a-ae2899c7b272)
 
-# Manifolds
+# Manifold
 
 ![CI](https://github.com/bustle/manifolds/actions/workflows/ci.yml/badge.svg)
 
-Manifolds is a framework designed to streamline the process of generating and managing data infrastructures in Google BigQuery using Terraform. By leveraging Manifolds, teams can efficiently create complex views that join dimensional data with multiple metrics tables, enabling more dynamic data interactions and fewer sandcastles.
+Manifold is a framework designed to streamline the process of generating and managing data infrastructures in Google BigQuery using Terraform. By leveraging Manifold, teams can efficiently create complex views that join dimensional data with multiple metrics tables, enabling more dynamic data interactions and fewer sandcastles.
 
 ## Philosophy
 
-At the heart of Manifolds, our philosophy is to simplify the complexity inherent in managing large-scale data architectures. We aim to provide a tool that not only facilitates the easy setup of data structures but also adheres to best practices in scalability, maintainability, and performance. Manifolds is built for data engineers, by data engineers, ensuring that the nuances and common challenges in data management are well-addressed.
+At the heart of Manifold, our philosophy is to simplify the complexity inherent in managing large-scale data architectures. We aim to provide a tool that not only facilitates the easy setup of data structures but also adheres to best practices in scalability, maintainability, and performance. Manifold is built for data engineers, by data engineers, ensuring that the nuances and common challenges in data management are well-addressed.
 
 ## Features
 
-- **Unified Data Modeling**: Manifolds introduces a standardized way to model dimensions and metrics, ensuring consistency and reliability in data reporting and analysis.
+- **Unified Data Modeling**: Manifold introduces a standardized way to model dimensions and metrics, ensuring consistency and reliability in data reporting and analysis.
 - **Scalability**: Designed to handle large volumes of data, supporting a variety of data types and structures.
 - **Flexibility**: Easily adapt to different kinds of metric groupings such as by device type (e.g., desktop, tablet, mobile) with identical metric structures beneath these segmentations.
 
@@ -26,7 +26,7 @@ At the heart of Manifolds, our philosophy is to simplify the complexity inherent
 
 ### Installation
 
-1. **Install the Manifolds Gem**:
+1. **Install the Manifold Gem**:
    `manifolds` is distributed as a Ruby gem. To install it, run:
 
 ```bash
@@ -64,7 +64,7 @@ After you fill out the manifold.yml file, this command generates the necessary B
 manifolds generate <data_project_name> bq
 ```
 
-## Manifolds Configuration
+## Manifold Configuration
 
 ### Vectors
 

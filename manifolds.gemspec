@@ -4,7 +4,7 @@ require_relative "lib/manifolds/version"
 
 Gem::Specification.new do |spec|
   spec.name = "manifolds"
-  spec.version = Manifolds::VERSION
+  spec.version = Manifold::VERSION
   spec.authors = ["claytongentry"]
   spec.email = ["clayton@bustle.com"]
 

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-module Manifolds
+module Manifold
   module Services
     # Handles the generation of BigQuery schemas based on project configurations
     class BigQueryService
       def initialize(logger)
         @logger = logger
-        @vector_service = Manifolds::Services::VectorService.new(logger)
+        @vector_service = Manifold::Services::VectorService.new(logger)
       end
 
       def generate_dimensions_schema(project_name)

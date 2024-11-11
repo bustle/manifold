@@ -2,7 +2,7 @@
 
 require "fakefs/spec_helpers"
 
-RSpec.describe Manifolds::Services::BigQueryService do
+RSpec.describe Manifold::Services::BigQueryService do
   include FakeFS::SpecHelpers
 
   let(:logger) { instance_spy(Logger) }

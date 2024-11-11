@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Manifolds::Services::VectorService do
+RSpec.describe Manifold::Services::VectorService do
   include FakeFS::SpecHelpers
 
   let(:logger) { instance_double(Logger) }

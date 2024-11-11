@@ -8,6 +8,6 @@ Dir[File.join(__dir__, "manifolds", "**", "*.rb")].sort.each do |file|
   require file
 end
 
-module Manifolds
+module Manifold
   class Error < StandardError; end
 end

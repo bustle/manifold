@@ -6,4 +6,4 @@ $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
 
 require "manifolds/cli"
 
-Manifolds::CLI.start(ARGV)
+Manifold::CLI.start(ARGV)

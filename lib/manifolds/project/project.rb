@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Manifolds
+module Manifold
   module API
     # Projects API
     class Project
