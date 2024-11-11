@@ -1,88 +1,98 @@
 # frozen_string_literal: true
 
-require_relative "../../lib/manifolds/cli"
-require "fileutils"
-require "logger"
-
 RSpec.describe Manifolds::CLI do
-  let(:project_name) { "commerce" }
-  let(:sub_project_name) { "Pages" }
-  let(:null_logger) { Logger.new(File::NULL) }
-  let(:bq_service) { instance_double("Manifolds::Services::BigQueryService", "commerce") }
+  include FakeFS::SpecHelpers
+
+  let(:null_logger) { instance_double(Logger) }
+  let(:mock_project) { instance_double(Manifolds::API::Project) }
+  let(:mock_workspace) { instance_double(Manifolds::API::Workspace) }
+  let(:mock_vector) { instance_double(Manifolds::API::Vector) }
+
+  before do
+    allow(Manifolds::API::Project).to receive(:new).and_return(mock_project)
+    allow(Manifolds::API::Workspace).to receive(:new).and_return(mock_workspace)
+    allow(Manifolds::API::Vector).to receive(:new).and_return(mock_vector)
+    allow(null_logger).to receive(:info)
+    allow(null_logger).to receive(:level=)
+  end
 
   describe "#init" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
-    before do
-      allow(FileUtils).to receive(:mkdir_p)
-      allow(File).to receive(:open)
-      cli.init(project_name)
-    end
+    let(:project_name) { "wetland" }
 
-    it "creates the projects directory" do
-      expect(FileUtils).to have_received(:mkdir_p).with("./#{project_name}/projects")
+    context "when initializing a new project" do
+      before do
+        allow(Manifolds::API::Project).to receive(:create).and_return(mock_project)
+      end
+
+      it "creates a new project through the API" do
+        cli.init(project_name)
+        expect(Manifolds::API::Project).to have_received(:create).with(project_name)
+      end
+
+      it "logs the project creation" do
+        cli.init(project_name)
+        expect(null_logger).to have_received(:info)
+          .with("Created umbrella project '#{project_name}' with projects and vectors directories.")
+      end
     end
   end
 
   describe "#add" do
-    let(:cli) { described_class.new(logger: null_logger) }
+    subject(:cli) { described_class.new(logger: null_logger) }
 
-    context "when within an umbrella project" do
+    let(:workspace_name) { "Commerce" }
+
+    context "when adding a workspace" do
       before do
-        FileUtils.mkdir_p("#{project_name}/projects") # Simulate an umbrella project
-        Dir.chdir(project_name)
-        cli.add(sub_project_name)
+        allow(mock_workspace).to receive(:add)
+        cli.add(workspace_name)
       end
 
-      after do
-        Dir.chdir("..")
-        FileUtils.rm_rf(project_name)
+      it "instantiates a new workspace through the API" do
+        expect(Manifolds::API::Workspace).to have_received(:new)
+          .with(workspace_name, project: mock_project)
       end
 
-      it "creates a tables directory within the project" do
-        expect(Dir.exist?("./projects/#{sub_project_name}/tables")).to be true
+      it "adds the workspace through the API" do
+        expect(mock_workspace).to have_received(:add)
       end
 
-      it "creates a routines directory within the project" do
-        expect(Dir.exist?("./projects/#{sub_project_name}/routines")).to be true
-      end
-
-      it "creates a manifold.yml file" do
-        expect(File.exist?("./projects/#{sub_project_name}/manifold.yml")).to be true
-      end
-
-      it "writes the manifold.yml file with dimensions" do
-        expect(File.read("./projects/#{sub_project_name}/manifold.yml")).to include("dimensions")
-      end
-
-      it "writes the manifold.yml file with metrics" do
-        config = File.read("./projects/#{sub_project_name}/manifold.yml")
-        expect(config).to include("metrics")
-      end
-    end
-
-    context "when outside an umbrella project" do
-      subject(:cli_with_stdout) { described_class.new(logger: Logger.new($stdout)) }
-
-      it "does not allow adding projects and logs an error" do
-        expect do
-          cli_with_stdout.add("Pages")
-        end.to output(/Not inside a Manifolds umbrella project./).to_stdout
+      it "logs the workspace creation" do
+        expect(null_logger).to have_received(:info)
+          .with("Added workspace '#{workspace_name}' with tables and routines directories.")
       end
     end
   end
 
-  describe "#generate" do
-    subject(:cli) { described_class.new(logger: null_logger) }
-
-    before do
-      allow(Manifolds::Services::BigQueryService).to receive(:new).and_return(bq_service)
-      allow(bq_service).to receive(:generate_dimensions_schema)
+  describe "vectors#add" do
+    subject(:cli) do
+      subcommands = described_class.new.class.subcommand_classes
+      subcommands["vectors"].new(logger: null_logger)
     end
 
-    it "calls generate_dimensions_schema on bq service with correct project name" do
-      cli.generate("Pages", "bq")
-      expect(bq_service).to have_received(:generate_dimensions_schema).with("Pages")
+    let(:vector_name) { "page" }
+
+    context "when adding a vector" do
+      before do
+        allow(mock_vector).to receive(:add)
+        cli.add(vector_name)
+      end
+
+      it "instantiates a new vector through the API" do
+        expect(Manifolds::API::Vector).to have_received(:new)
+          .with(vector_name, project: mock_project)
+      end
+
+      it "adds the vector through the API" do
+        expect(mock_vector).to have_received(:add)
+      end
+
+      it "logs the vector creation" do
+        expect(null_logger).to have_received(:info)
+          .with("Created vector configuration for '#{vector_name}'.")
+      end
     end
   end
 end

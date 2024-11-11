@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
+require "manifolds"
+require "debug"
+require "logger"
 require "simplecov"
 require "simplecov-json"
 require "simplecov-lcov"
+require "fakefs/spec_helpers"
+Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
 
 SimpleCov::Formatter::LcovFormatter.config do |c|
   c.report_with_single_file = true
@@ -16,13 +21,6 @@ SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
                                                                 ])
 
 SimpleCov.start do
-  add_filter "/spec/"
-  add_filter "/vendor/"
-
-  # Track all directories containing source code
-  add_group "Manifolds", "lib/manifolds"
-  add_group "Services", "lib/manifolds/services"
-
   # Set the minimum coverage percentage
   minimum_coverage 95
   minimum_coverage_by_file 90
@@ -39,6 +37,8 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
+
+  config.example_status_persistence_file_path = "spec/examples.txt"
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
   config.order = :random

@@ -66,16 +66,19 @@ manifolds generate <data_project_name> bq
 
 ## Manifolds Configuration
 
-### Dimensions
+### Vectors
 
-Dimensions are fields that describe the context of the data. They are typically used to segment and filter data in reports.
+Vectors are the entities you can roll up data for. Each vector has a set of dimensions defined in its `vectors/<vector_name>.yml` configuration file.
 
 ```yaml
-dimensions:
-  - name: user_id
-    type: STRING
-  - name: date
-    type: DATE
+vectors:
+  - page
+```
+
+#### Add a vector to your project
+
+```bash
+manifolds vectors add page
 ```
 
 ### Metrics

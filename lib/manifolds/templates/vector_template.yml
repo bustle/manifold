@@ -1,0 +1,7 @@
+attributes:
+  # Add your vector attributes here
+  # Format: attribute_name: TYPE
+  # Example:
+  # id: STRING
+  # created_at: TIMESTAMP
+  # status: STRING
