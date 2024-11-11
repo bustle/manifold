@@ -7,7 +7,7 @@ module Manifold
       attr_reader :name, :project, :template_path
 
       DEFAULT_TEMPLATE_PATH = Pathname.pwd.join(
-        "lib", "manifolds", "templates", "workspace_template.yml"
+        "lib", "manifold", "templates", "workspace_template.yml"
       )
 
       def initialize(name, project:, template_path: DEFAULT_TEMPLATE_PATH)

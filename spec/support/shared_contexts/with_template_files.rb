@@ -9,7 +9,7 @@ RSpec.shared_context "with template files" do
   end
 
   def template_dir
-    Pathname.new(File.dirname(__FILE__)).join("../../../lib/manifolds/templates")
+    Pathname.new(File.dirname(__FILE__)).join("../../../lib/manifold/templates")
   end
 
   def vector_template_path

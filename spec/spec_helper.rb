@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "manifolds"
+require "manifold"
 require "debug"
 require "logger"
 require "simplecov"
