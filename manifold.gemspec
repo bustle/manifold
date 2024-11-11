@@ -3,7 +3,7 @@
 require_relative "lib/manifold/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "manifold"
+  spec.name = "manifold-cli"
   spec.version = Manifold::VERSION
   spec.authors = ["claytongentry"]
   spec.email = ["clayton@bustle.com"]
