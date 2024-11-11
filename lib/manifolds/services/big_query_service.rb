@@ -14,13 +14,10 @@ module Manifolds
         return unless validate_config_exists(config_path, project_name)
 
         config = YAML.safe_load_file(config_path)
-        fields = []
 
-        # Load vector schemas
-        config["vectors"]&.each do |vector|
+        fields = config["vectors"].reduce([]) do |list, vector|
           @logger.info("Loading vector schema for '#{vector}'.")
-          vector_schema = @vector_service.load_vector_schema(vector)
-          fields << vector_schema if vector_schema
+          [*@vector_service.load_vector_schema(vector), *list]
         end
 
         create_dimensions_file(project_name, fields)
