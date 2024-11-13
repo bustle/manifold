@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-module Manifolds
+module Manifold
   module API
     # Describes the entities for whom metrics are calculated.
     class Vector
       attr_reader :name, :project, :template_path
 
       DEFAULT_TEMPLATE_PATH = Pathname.pwd.join(
-        "lib", "manifolds", "templates", "vector_template.yml"
+        "lib", "manifold", "templates", "vector_template.yml"
       ).freeze
 
       def initialize(name, project:, template_path: DEFAULT_TEMPLATE_PATH)

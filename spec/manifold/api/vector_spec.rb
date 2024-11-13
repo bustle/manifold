@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-RSpec.describe Manifolds::API::Vector do
+RSpec.describe Manifold::API::Vector do
   include FakeFS::SpecHelpers
   subject(:vector) { described_class.new(name, project: project) }
 
   include_context "with template files"
 
-  let(:project) { Manifolds::API::Project.new("wetland") }
+  let(:project) { Manifold::API::Project.new("wetland") }
   let(:name) { "page" }
 
   it { is_expected.to have_attributes(name: name, project: project) }

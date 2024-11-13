@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Manifolds::API::Project do
+RSpec.describe Manifold::API::Project do
   include FakeFS::SpecHelpers
 
   subject(:project) { described_class.new(name) }

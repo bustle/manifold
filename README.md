@@ -1,18 +1,18 @@
-![manifold](https://github.com/bustle/manifolds/assets/8030836/be7f24f6-27b9-4924-8e1a-ae2899c7b272)
+![manifold](https://github.com/bustle/manifold/assets/8030836/be7f24f6-27b9-4924-8e1a-ae2899c7b272)
 
-# Manifolds
+# Manifold
 
-![CI](https://github.com/bustle/manifolds/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/bustle/manifold/actions/workflows/ci.yml/badge.svg)
 
-Manifolds is a framework designed to streamline the process of generating and managing data infrastructures in Google BigQuery using Terraform. By leveraging Manifolds, teams can efficiently create complex views that join dimensional data with multiple metrics tables, enabling more dynamic data interactions and fewer sandcastles.
+Manifold is a framework designed to streamline the process of generating and managing data infrastructures in Google BigQuery using Terraform. By leveraging Manifold, teams can efficiently create complex views that join dimensional data with multiple metrics tables, enabling more dynamic data interactions and fewer sandcastles.
 
 ## Philosophy
 
-At the heart of Manifolds, our philosophy is to simplify the complexity inherent in managing large-scale data architectures. We aim to provide a tool that not only facilitates the easy setup of data structures but also adheres to best practices in scalability, maintainability, and performance. Manifolds is built for data engineers, by data engineers, ensuring that the nuances and common challenges in data management are well-addressed.
+At the heart of Manifold, our philosophy is to simplify the complexity inherent in managing large-scale data architectures. We aim to provide a tool that not only facilitates the easy setup of data structures but also adheres to best practices in scalability, maintainability, and performance. Manifold is built for data engineers, by data engineers, ensuring that the nuances and common challenges in data management are well-addressed.
 
 ## Features
 
-- **Unified Data Modeling**: Manifolds introduces a standardized way to model dimensions and metrics, ensuring consistency and reliability in data reporting and analysis.
+- **Unified Data Modeling**: Manifold introduces a standardized way to model dimensions and metrics, ensuring consistency and reliability in data reporting and analysis.
 - **Scalability**: Designed to handle large volumes of data, supporting a variety of data types and structures.
 - **Flexibility**: Easily adapt to different kinds of metric groupings such as by device type (e.g., desktop, tablet, mobile) with identical metric structures beneath these segmentations.
 
@@ -26,11 +26,11 @@ At the heart of Manifolds, our philosophy is to simplify the complexity inherent
 
 ### Installation
 
-1. **Install the Manifolds Gem**:
-   `manifolds` is distributed as a Ruby gem. To install it, run:
+1. **Install the Manifold Gem**:
+   `manifold` is distributed as a Ruby gem. To install it, run:
 
 ```bash
-gem install manifolds
+gem install manifold
 ```
 
 2. **Setup Terraform**: Ensure that Terraform is installed and configured to interact with your Google Cloud Platform account.
@@ -44,7 +44,7 @@ gem install manifolds
 Set up a new umbrella project directory with the necessary structure for managing multiple data projects.
 
 ```bash
-manifolds init <project_name>
+manifold init <project_name>
 ```
 
 2. **Add a New Data Project**
@@ -53,7 +53,7 @@ Add a new data project under the umbrella. This setup includes creating a direct
 
 ```bash
 cd <project_name>
-manifolds add <data_project_name>
+manifold add <data_project_name>
 ```
 
 3. **Generate BigQuery Resource Definitions**
@@ -61,10 +61,10 @@ manifolds add <data_project_name>
 After you fill out the manifold.yml file, this command generates the necessary BigQuery schema files based on the specified dimensions and metrics.
 
 ```bash
-manifolds generate <data_project_name> bq
+manifold generate <data_project_name> bq
 ```
 
-## Manifolds Configuration
+## Manifold Configuration
 
 ### Vectors
 
@@ -78,7 +78,7 @@ vectors:
 #### Add a vector to your project
 
 ```bash
-manifolds vectors add page
+manifold vectors add page
 ```
 
 ### Metrics

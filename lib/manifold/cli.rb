@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Manifolds
+module Manifold
   # CLI provides command line interface functionality
   # for creating and managing umbrella projects for data management.
   class CLI < Thor
@@ -17,7 +17,7 @@ module Manifolds
 
     desc "init NAME", "Generate a new umbrella project for data management"
     def init(name)
-      Manifolds::API::Project.create(name)
+      Manifold::API::Project.create(name)
       logger.info "Created umbrella project '#{name}' with projects and vectors directories."
     end
 
