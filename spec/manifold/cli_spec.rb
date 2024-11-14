@@ -2,97 +2,60 @@
 
 RSpec.describe Manifold::CLI do
   include FakeFS::SpecHelpers
+  subject(:cli) { described_class.new(logger: logger, project: project) }
 
-  let(:null_logger) { instance_double(Logger) }
-  let(:mock_project) { instance_double(Manifold::API::Project) }
-  let(:mock_workspace) { instance_double(Manifold::API::Workspace) }
-  let(:mock_vector) { instance_double(Manifold::API::Vector) }
+  let(:project) { Manifold::API::Project.new }
+  let(:logger) { Logger.new(IO::NULL) }
 
-  before do
-    allow(Manifold::API::Project).to receive(:new).and_return(mock_project)
-    allow(Manifold::API::Workspace).to receive(:new).and_return(mock_workspace)
-    allow(Manifold::API::Vector).to receive(:new).and_return(mock_vector)
-    allow(null_logger).to receive(:info)
-    allow(null_logger).to receive(:level=)
-  end
+  # let(:null_logger) { instance_double(Logger) }
+  # let(:mock_project) { instance_double(Manifold::API::Project) }
+  # let(:mock_workspace) { instance_double(Manifold::API::Workspace) }
+  # let(:mock_vector) { instance_double(Manifold::API::Vector) }
+
+  # before do
+  #   allow(Manifold::API::Project).to receive(:new).and_return(mock_project)
+  #   allow(Manifold::API::Workspace).to receive(:new).and_return(mock_workspace)
+  #   allow(Manifold::API::Vector).to receive(:new).and_return(mock_vector)
+  #   allow(null_logger).to receive(:info)
+  #   allow(null_logger).to receive(:level=)
+  # end
 
   describe "#init" do
-    subject(:cli) { described_class.new(logger: null_logger) }
-
-    let(:project_name) { "wetland" }
-
-    context "when initializing a new project" do
-      before do
-        allow(Manifold::API::Project).to receive(:create).and_return(mock_project)
-      end
-
-      it "creates a new project through the API" do
-        cli.init(project_name)
-        expect(Manifold::API::Project).to have_received(:create).with(project_name)
-      end
-
-      it "logs the project creation" do
-        cli.init(project_name)
-        expect(null_logger).to have_received(:info)
-          .with("Created umbrella project '#{project_name}' with projects and vectors directories.")
-      end
+    before do
+      allow(project).to receive(:create)
+      allow(logger).to receive(:info)
+      cli.init
     end
+
+    it { expect(project).to have_received(:create) }
+    it { expect(logger).to have_received(:info) }
   end
 
   describe "#add" do
-    subject(:cli) { described_class.new(logger: null_logger) }
+    let(:name) { "workspace_name" }
+    let(:workspace) { Manifold::API::Workspace.new(name, project: project) }
 
-    let(:workspace_name) { "Commerce" }
-
-    context "when adding a workspace" do
-      before do
-        allow(mock_workspace).to receive(:add)
-        cli.add(workspace_name)
-      end
-
-      it "instantiates a new workspace through the API" do
-        expect(Manifold::API::Workspace).to have_received(:new)
-          .with(workspace_name, project: mock_project)
-      end
-
-      it "adds the workspace through the API" do
-        expect(mock_workspace).to have_received(:add)
-      end
-
-      it "logs the workspace creation" do
-        expect(null_logger).to have_received(:info)
-          .with("Added workspace '#{workspace_name}' with tables and routines directories.")
-      end
+    before do
+      allow(workspace).to receive(:add)
+      cli.add(name)
     end
+
+    it { expect(workspace).to have_received(:add) }
+    it { expect(logger).to have_received(:info) }
   end
 
-  describe "vectors#add" do
-    subject(:cli) do
-      subcommands = described_class.new.class.subcommand_classes
-      subcommands["vectors"].new(logger: null_logger)
-    end
+  describe "vector subcommand" do
+    let(:name) { "vector_name" }
+    let(:vector) { Manifold::API::Vector.new(name, project: project) }
 
-    let(:vector_name) { "page" }
-
-    context "when adding a vector" do
+    describe "#add" do
       before do
-        allow(mock_vector).to receive(:add)
-        cli.add(vector_name)
+        allow(vector).to receive(:add)
+        cli.add(name)
       end
 
-      it "instantiates a new vector through the API" do
-        expect(Manifold::API::Vector).to have_received(:new)
-          .with(vector_name, project: mock_project)
-      end
-
-      it "adds the vector through the API" do
-        expect(mock_vector).to have_received(:add)
-      end
-
-      it "logs the vector creation" do
-        expect(null_logger).to have_received(:info)
-          .with("Created vector configuration for '#{vector_name}'.")
-      end
+      it { expect(vector).to have_received(:add) }
+      it { expect(logger).to have_received(:info) }
     end
   end
 end

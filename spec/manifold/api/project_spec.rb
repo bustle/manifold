@@ -1,24 +1,16 @@
 # frozen_string_literal: true
 
-RSpec.describe Manifold::API::Project do
+RSpec.describe(Manifold::API::Project) do
   include FakeFS::SpecHelpers
 
-  subject(:project) { described_class.new(name) }
+  subject(:project) { described_class.new(config: config) }
 
-  let(:name) { "wetland" }
+  let(:config) { Pathname.pwd.join("project.yaml") }
 
-  it { is_expected.to have_attributes(name: name) }
+  it { is_expected.to have_attributes(config_path: config) }
 
-  describe ".create" do
-    before { described_class.create(name) }
-
-    it "creates the vectors directory" do
-      expect(project.vectors_directory).to be_directory
-    end
-
-    it "creates the workspaces directory" do
-      expect(project.workspaces_directory).to be_directory
-    end
+  describe ".directory" do
+    it { expect(project.directory).to be_an_instance_of(Pathname) }
   end
 
   describe ".workspaces_directory" do
@@ -29,19 +21,33 @@ RSpec.describe Manifold::API::Project do
     it { expect(project.vectors_directory).to be_an_instance_of(Pathname) }
   end
 
-  context "with directory" do
-    subject(:project) { described_class.new(name, directory: directory) }
-
-    let(:directory) { Pathname.pwd.join("supplied_directory") }
-
-    it { is_expected.to have_attributes(directory: directory) }
-
-    it "uses it as the base for the vectors directory" do
-      expect(project.vectors_directory).to eq directory.join("vectors")
+  context "when not created" do
+    describe ".created?" do
+      it { expect(project.created?).to be false }
     end
 
-    it "uses it as the base for the workspaces directory" do
-      expect(project.workspaces_directory).to eq directory.join("workspaces")
+    describe ".config" do
+      it { expect(project.config).to be nil }
+    end
+
+    describe ".create" do
+      before { project.create }
+
+      it { expect(project.config_path).to be_file }
+      it { expect(project.vectors_directory).to be_directory }
+      it { expect(project.workspaces_directory).to be_directory }
+    end
+  end
+
+  context "when created" do
+    before { project.create }
+
+    describe ".created?" do
+      it { expect(project.created?).to be true }
+    end
+
+    describe ".config" do
+      it { expect(project.config).to be_a(Hash) }
     end
   end
 end
