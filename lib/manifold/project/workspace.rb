@@ -8,7 +8,7 @@ module Manifold
 
       DEFAULT_TEMPLATE_PATH = Pathname.pwd.join(
         "lib", "manifold", "templates", "workspace_template.yml"
-      )
+      ).freeze
 
       def initialize(name, project:, template_path: DEFAULT_TEMPLATE_PATH)
         self.name = name

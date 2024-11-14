@@ -4,17 +4,23 @@ module Manifold
   module API
     # Projects API
     class Project
-      attr_reader :name, :directory
+      DEFAULT_CONFIG = {
+        name: File.basename(Dir.getwd)
+      }
 
-      def initialize(name, directory: Pathname.pwd.join(name))
-        self.name = name
-        self.directory = Pathname(directory)
+      attr_reader :config_path
+
+      def initialize(config: Pathname.pwd.join("project.yaml"))
+        self.config_path = config
       end
 
-      def self.create(name, directory: Pathname.pwd.join(name))
-        new(name, directory: directory).tap do |project|
-          [project.workspaces_directory, project.vectors_directory].each(&:mkpath)
-        end
+      def create
+        File.open(config_path, "w") { |file| file.write DEFAULT_CONFIG.to_yaml }
+        [workspaces_directory, vectors_directory].each(&:mkpath)
+      end
+
+      def directory
+        Pathname.new(Dir.pwd)
       end
 
       def workspaces_directory
@@ -25,9 +31,19 @@ module Manifold
         directory.join("vectors")
       end
 
+      def created?
+        File.exist? config_path
+      end
+
+      def config
+        return nil unless created?
+
+        @config ||= YAML.safe_load_file(config_path, permitted_classes: [Symbol])
+      end
+
       private
 
-      attr_writer :name, :directory
+      attr_writer :config_path
     end
   end
 end

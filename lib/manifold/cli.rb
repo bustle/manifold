@@ -4,21 +4,22 @@ module Manifold
   # CLI provides command line interface functionality
   # for creating and managing umbrella projects for data management.
   class CLI < Thor
-    attr_accessor :logger, :bq_service
+    attr_accessor :logger, :bq_service, :project
 
-    def initialize(*args, logger: Logger.new($stdout))
+    def initialize(*args, logger: Logger.new($stdout),
+                   project: Manifold::API::Project.new(config: DEFAULT_PROJECT_CONFIG))
       super(*args)
 
+      self.project = project
+      self.bq_service = Services::BigQueryService.new(logger)
       self.logger = logger
       logger.level = Logger::INFO
-
-      self.bq_service = Services::BigQueryService.new(logger)
     end
 
-    desc "init NAME", "Generate a new umbrella project for data management"
-    def init(name)
-      Manifold::API::Project.create(name)
-      logger.info "Created umbrella project '#{name}' with projects and vectors directories."
+    desc "init PROJECT_NAME", "Initializes a new project within the current directory"
+    def init
+      project.create
+      logger.info "Created new project manifold in #{project.directory}."
     end
 
     desc "vectors SUBCOMMAND ...ARGS", "Manage vectors"
@@ -33,7 +34,7 @@ module Manifold
       end
 
       desc "add VECTOR_NAME", "Add a new vector configuration"
-      def add(name, project: API::Project.new(File.basename(Dir.getwd)))
+      def add(name)
         vector = API::Vector.new(name, project: project)
         vector.add
         logger.info "Created vector configuration for '#{name}'."
@@ -41,7 +42,7 @@ module Manifold
     }
 
     desc "add WORKSPACE_NAME", "Add a new workspace to a project"
-    def add(name, project: API::Project.new(File.basename(Dir.getwd)))
+    def add(name)
       workspace = API::Workspace.new(name, project: project)
       workspace.add
       logger.info "Added workspace '#{name}' with tables and routines directories."
