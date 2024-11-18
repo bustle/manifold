@@ -2,14 +2,13 @@
 
 RSpec.describe Manifold::API::Vector do
   include FakeFS::SpecHelpers
-  subject(:vector) { described_class.new(name, project: project) }
+  subject(:vector) { described_class.new(name) }
 
   include_context "with template files"
 
-  let(:project) { Manifold::API::Project.new("wetland") }
   let(:name) { "page" }
 
-  it { is_expected.to have_attributes(name: name, project: project) }
+  it { is_expected.to have_attributes(name: name) }
 
   describe ".add" do
     before { vector.add }

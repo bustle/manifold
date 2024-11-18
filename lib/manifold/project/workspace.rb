@@ -22,11 +22,11 @@ module Manifold
       end
 
       def tables_directory
-        project.workspaces_directory.join(name, "tables")
+        directory.join("tables")
       end
 
       def routines_directory
-        project.workspaces_directory.join(name, "routines")
+        directory.join("routines")
       end
 
       def manifold_file
@@ -40,10 +40,14 @@ module Manifold
       end
 
       def manifold_path
-        project.workspaces_directory.join(name, "manifold.yml")
+        directory.join("manifold.yml")
       end
 
       private
+
+      def directory
+        project.directory.join("workspaces", name)
+      end
 
       attr_writer :name, :project, :template_path
     end

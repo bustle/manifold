@@ -33,8 +33,8 @@ module Manifold
       end
 
       desc "add VECTOR_NAME", "Add a new vector configuration"
-      def add(name, project: API::Project.new(File.basename(Dir.getwd)))
-        vector = API::Vector.new(name, project: project)
+      def add(name)
+        vector = API::Vector.new(name)
         vector.add
         logger.info "Created vector configuration for '#{name}'."
       end
