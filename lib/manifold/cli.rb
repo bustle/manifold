@@ -41,8 +41,8 @@ module Manifold
     }
 
     desc "add WORKSPACE_NAME", "Add a new workspace to a project"
-    def add(name, project: API::Project.new(File.basename(Dir.getwd)))
-      workspace = API::Workspace.new(name, project: project)
+    def add(name)
+      workspace = API::Workspace.new(name)
       workspace.add
       logger.info "Added workspace '#{name}' with tables and routines directories."
     end
