@@ -4,15 +4,14 @@ module Manifold
   module API
     # Encapsulates a single manifold.
     class Workspace
-      attr_reader :name, :project, :template_path
+      attr_reader :name, :template_path
 
-      DEFAULT_TEMPLATE_PATH = Pathname.pwd.join(
-        "lib", "manifold", "templates", "workspace_template.yml"
-      )
+      DEFAULT_TEMPLATE_PATH = File.expand_path(
+        "../templates/workspace_template.yml", __dir__
+      ).freeze
 
-      def initialize(name, project:, template_path: DEFAULT_TEMPLATE_PATH)
+      def initialize(name, template_path: DEFAULT_TEMPLATE_PATH)
         self.name = name
-        self.project = project
         self.template_path = template_path
       end
 
@@ -22,11 +21,11 @@ module Manifold
       end
 
       def tables_directory
-        project.workspaces_directory.join(name, "tables")
+        directory.join("tables")
       end
 
       def routines_directory
-        project.workspaces_directory.join(name, "routines")
+        directory.join("routines")
       end
 
       def manifold_file
@@ -40,12 +39,16 @@ module Manifold
       end
 
       def manifold_path
-        project.workspaces_directory.join(name, "manifold.yml")
+        directory.join("manifold.yml")
       end
 
       private
 
-      attr_writer :name, :project, :template_path
+      def directory
+        Pathname.pwd.join("workspaces", name)
+      end
+
+      attr_writer :name, :template_path
     end
   end
 end

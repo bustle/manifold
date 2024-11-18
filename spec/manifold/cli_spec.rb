@@ -51,8 +51,7 @@ RSpec.describe Manifold::CLI do
       end
 
       it "instantiates a new workspace through the API" do
-        expect(Manifold::API::Workspace).to have_received(:new)
-          .with(workspace_name, project: mock_project)
+        expect(Manifold::API::Workspace).to have_received(:new).with(workspace_name)
       end
 
       it "adds the workspace through the API" do
@@ -81,8 +80,7 @@ RSpec.describe Manifold::CLI do
       end
 
       it "instantiates a new vector through the API" do
-        expect(Manifold::API::Vector).to have_received(:new)
-          .with(vector_name, project: mock_project)
+        expect(Manifold::API::Vector).to have_received(:new).with(vector_name)
       end
 
       it "adds the vector through the API" do
