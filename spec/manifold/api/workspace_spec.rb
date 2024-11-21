@@ -61,7 +61,6 @@ RSpec.describe Manifold::API::Workspace do
   describe "#generate" do
     context "when the manifold configuration exists" do
       before do
-        # Create necessary directories and files
         Pathname.pwd.join("vectors").mkpath
         Pathname.pwd.join("vectors", "user.yml").write(<<~YAML)
           attributes:
@@ -69,7 +68,7 @@ RSpec.describe Manifold::API::Workspace do
             email: string
         YAML
 
-        workspace.add # Creates the workspace directory and manifold.yml
+        workspace.add
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - User

@@ -18,6 +18,10 @@ module Manifold
         end
       end
 
+      def workspaces
+        @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger: logger) }
+      end
+
       def generate
         workspaces.each(&:generate)
       end
@@ -31,10 +35,6 @@ module Manifold
       end
 
       private
-
-      def workspaces
-        @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger: logger) }
-      end
 
       def workspace_directories
         workspaces_directory.children.select(&:directory?)

@@ -7,6 +7,8 @@ RSpec.describe Manifold::API::Project do
 
   let(:name) { "wetland" }
 
+  include_context "with template files"
+
   it { is_expected.to have_attributes(name: name) }
 
   describe ".create" do
@@ -42,6 +44,25 @@ RSpec.describe Manifold::API::Project do
 
     it "uses it as the base for the workspaces directory" do
       expect(project.workspaces_directory).to eq directory.join("workspaces")
+    end
+  end
+
+  describe "#generate" do
+    let(:workspace1) { instance_double(Manifold::API::Workspace) }
+    let(:workspace2) { instance_double(Manifold::API::Workspace) }
+
+    before do
+      described_class.create(name)
+
+      [workspace1, workspace2].each do |workspace|
+        project.workspaces << workspace
+        allow(workspace).to receive(:generate)
+      end
+    end
+
+    it "calls generate on each workspace" do
+      project.generate
+      expect([workspace1, workspace2]).to all(have_received(:generate))
     end
   end
 end
