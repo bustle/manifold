@@ -10,10 +10,7 @@ module Manifold
 
       def load_vector_schema(vector_name)
         path = config_path(vector_name)
-        unless path.file?
-          @logger.error("Vector configuration not found: #{path}")
-          return nil
-        end
+        raise "Vector configuration not found: #{path}" unless path.file?
 
         config = YAML.safe_load_file(path)
         fields = transform_attributes_to_schema(config["attributes"])

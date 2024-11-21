@@ -51,16 +51,10 @@ RSpec.describe Manifold::Services::VectorService do
         allow(logger).to receive(:error)
       end
 
-      it "returns nil" do
-        expect(service.load_vector_schema(vector_name)).to be_nil
-      end
-
-      it "logs an error message" do
-        path = Pathname.pwd.join("vectors", "#{vector_name}.yml")
-        service.load_vector_schema(vector_name)
-
-        expect(logger).to have_received(:error)
-          .with("Vector configuration not found: #{path}")
+      it "raises an error" do
+        expect { service.load_vector_schema(vector_name) }.to raise_error(
+          "Vector configuration not found: #{Pathname.pwd.join("vectors", "#{vector_name}.yml")}"
+        )
       end
     end
   end
