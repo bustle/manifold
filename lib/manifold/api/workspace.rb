@@ -31,7 +31,7 @@ module Manifold
 
         fields = vectors.reduce([]) do |list, vector|
           @logger.info("Loading vector schema for '#{vector}'.")
-          [*@vector_service.load_vector_schema(vector), *list]
+          list << @vector_service.load_vector_schema(vector)
         end
 
         create_dimensions_file(fields)
