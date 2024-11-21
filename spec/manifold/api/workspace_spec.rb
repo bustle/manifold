@@ -81,10 +81,15 @@ RSpec.describe Manifold::API::Workspace do
         expect(workspace.tables_directory.join("dimensions.json")).to be_file
       end
 
-      it "includes the expected schema structure" do
-        schema = JSON.parse(workspace.tables_directory.join("dimensions.json").read)
-        expect(schema).to include(
-          { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" }
+      it "sets the ID field" do
+        schema = parse_dimensions_schema
+        expect(schema).to include({ "type" => "STRING", "name" => "id", "mode" => "REQUIRED" })
+      end
+
+      it "sets the dimensions fields" do
+        expect(get_dimension("user")["fields"]).to include(
+          { "type" => "STRING", "name" => "user_id", "mode" => "NULLABLE" },
+          { "type" => "STRING", "name" => "email", "mode" => "NULLABLE" }
         )
       end
 
@@ -95,6 +100,15 @@ RSpec.describe Manifold::API::Workspace do
       it "logs successful generation" do
         expect(logger).to have_received(:info)
           .with("Generated BigQuery dimensions table schema for workspace '#{name}'.")
+      end
+
+      def parse_dimensions_schema
+        JSON.parse(workspace.tables_directory.join("dimensions.json").read)
+      end
+
+      def get_dimension(field)
+        dimensions = parse_dimensions_schema.find { |f| f["name"] == "dimensions" }
+        dimensions["fields"].find { |f| f["name"] == field }
       end
     end
 
