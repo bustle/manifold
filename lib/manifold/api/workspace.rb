@@ -23,12 +23,9 @@ module Manifold
       end
 
       def generate
-        return unless manifold_exists?
+        return unless manifold_exists? && any_vectors?
 
-        config = YAML.safe_load_file(manifold_path)
-        return if config["vectors"].nil? || config["vectors"].empty?
-
-        fields = config["vectors"].reduce([]) do |list, vector|
+        fields = vectors.reduce([]) do |list, vector|
           @logger.info("Loading vector schema for '#{vector}'.")
           [*@vector_service.load_vector_schema(vector), *list]
         end
@@ -50,6 +47,10 @@ module Manifold
         File.new(manifold_path)
       end
 
+      def manifold_yaml
+        @manifold_yaml ||= YAML.safe_load_file(manifold_path)
+      end
+
       def manifold_exists?
         manifold_path.file?
       end
@@ -66,9 +67,7 @@ module Manifold
 
       def create_dimensions_file(fields)
         tables_directory.mkpath
-        dimensions = dimensions_schema(fields)
-
-        dimensions_path.write(dimensions)
+        dimensions_path.write(dimensions_schema(fields))
         @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
       end
 
@@ -82,6 +81,14 @@ module Manifold
 
       def dimensions_path
         tables_directory.join("dimensions.json")
+      end
+
+      def any_vectors?
+        !(vectors.nil? || vectors.empty?)
+      end
+
+      def vectors
+        manifold_yaml["vectors"]
       end
 
       attr_writer :name, :template_path
