@@ -78,9 +78,9 @@ module Manifold
       end
 
       def dimensions_fields
-        vectors.reduce([]) do |list, vector|
+        vectors.filter_map do |vector|
           logger.info("Loading vector schema for '#{vector}'.")
-          list << @vector_service.load_vector_schema(vector)
+          @vector_service.load_vector_schema(vector)
         end
       end
 
