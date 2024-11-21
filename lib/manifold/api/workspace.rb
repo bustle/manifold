@@ -4,7 +4,7 @@ module Manifold
   module API
     # Encapsulates a single manifold.
     class Workspace
-      attr_reader :name, :template_path
+      attr_reader :name, :template_path, :logger
 
       DEFAULT_TEMPLATE_PATH = File.expand_path(
         "../templates/workspace_template.yml", __dir__
@@ -30,7 +30,7 @@ module Manifold
         return unless manifold_exists? && any_vectors?
 
         generate_dimensions
-        @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
+        logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
       end
 
       def tables_directory
@@ -79,7 +79,7 @@ module Manifold
 
       def dimensions_fields
         vectors.reduce([]) do |list, vector|
-          @logger.info("Loading vector schema for '#{vector}'.")
+          logger.info("Loading vector schema for '#{vector}'.")
           list << @vector_service.load_vector_schema(vector)
         end
       end
