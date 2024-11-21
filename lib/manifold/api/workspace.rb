@@ -29,12 +29,8 @@ module Manifold
       def generate
         return unless manifold_exists? && any_vectors?
 
-        fields = vectors.reduce([]) do |list, vector|
-          @logger.info("Loading vector schema for '#{vector}'.")
-          list << @vector_service.load_vector_schema(vector)
-        end
-
-        create_dimensions_file(fields)
+        generate_dimensions
+        @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
       end
 
       def tables_directory
@@ -69,22 +65,27 @@ module Manifold
         @manifold_yaml ||= YAML.safe_load_file(manifold_path)
       end
 
-      def create_dimensions_file(fields)
-        tables_directory.mkpath
-        dimensions_path.write(dimensions_schema_json(fields).concat("\n"))
-        @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
+      def generate_dimensions
+        dimensions_path.write(dimensions_schema_json.concat("\n"))
       end
 
-      def dimensions_schema(fields)
+      def dimensions_schema
         [
           { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
           { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED",
-            "fields" => fields }
+            "fields" => dimensions_fields }
         ]
       end
 
-      def dimensions_schema_json(fields)
-        JSON.pretty_generate(dimensions_schema(fields))
+      def dimensions_fields
+        vectors.reduce([]) do |list, vector|
+          @logger.info("Loading vector schema for '#{vector}'.")
+          list << @vector_service.load_vector_schema(vector)
+        end
+      end
+
+      def dimensions_schema_json
+        JSON.pretty_generate(dimensions_schema)
       end
 
       def dimensions_path
