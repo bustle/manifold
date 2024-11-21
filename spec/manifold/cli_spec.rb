@@ -34,7 +34,7 @@ RSpec.describe Manifold::CLI do
       it "logs the project creation" do
         cli.init(project_name)
         expect(null_logger).to have_received(:info)
-          .with("Created umbrella project '#{project_name}' with projects and vectors directories.")
+          .with("Created umbrella project '#{project_name}' with workspaces and vectors directories.")
       end
     end
   end

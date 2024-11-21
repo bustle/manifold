@@ -4,10 +4,11 @@ module Manifold
   module API
     # Projects API
     class Project
-      attr_reader :name, :directory
+      attr_reader :name, :logger, :directory
 
-      def initialize(name, directory: Pathname.pwd.join(name))
+      def initialize(name, logger: Logger.new($stdout), directory: Pathname.pwd.join(name))
         self.name = name
+        self.logger = logger
         self.directory = Pathname(directory)
       end
 
@@ -15,6 +16,10 @@ module Manifold
         new(name, directory: directory).tap do |project|
           [project.workspaces_directory, project.vectors_directory].each(&:mkpath)
         end
+      end
+
+      def generate
+        workspaces.each(&:generate)
       end
 
       def workspaces_directory
@@ -27,7 +32,15 @@ module Manifold
 
       private
 
-      attr_writer :name, :directory
+      def workspaces
+        @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger: logger) }
+      end
+
+      def workspace_directories
+        workspaces_directory.children.select(&:directory?)
+      end
+
+      attr_writer :name, :logger, :directory
     end
   end
 end

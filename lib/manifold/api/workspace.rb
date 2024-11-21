@@ -17,6 +17,10 @@ module Manifold
         @vector_service = Services::VectorService.new(logger)
       end
 
+      def self.from_directory(directory, logger: Logger.new($stdout))
+        new(directory.basename.to_s, logger: logger)
+      end
+
       def add
         [tables_directory, routines_directory].each(&:mkpath)
         FileUtils.cp(template_path, manifold_path)
@@ -47,10 +51,6 @@ module Manifold
         File.new(manifold_path)
       end
 
-      def manifold_yaml
-        @manifold_yaml ||= YAML.safe_load_file(manifold_path)
-      end
-
       def manifold_exists?
         manifold_path.file?
       end
@@ -63,6 +63,10 @@ module Manifold
 
       def directory
         Pathname.pwd.join("workspaces", name)
+      end
+
+      def manifold_yaml
+        @manifold_yaml ||= YAML.safe_load_file(manifold_path)
       end
 
       def create_dimensions_file(fields)

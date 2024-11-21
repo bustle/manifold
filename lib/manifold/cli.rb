@@ -16,7 +16,7 @@ module Manifold
     desc "init NAME", "Generate a new umbrella project for data management"
     def init(name)
       Manifold::API::Project.create(name)
-      logger.info "Created umbrella project '#{name}' with projects and vectors directories."
+      logger.info "Created umbrella project '#{name}' with workspaces and vectors directories."
     end
 
     desc "vectors SUBCOMMAND ...ARGS", "Manage vectors"
@@ -45,11 +45,12 @@ module Manifold
       logger.info "Added workspace '#{name}' with tables and routines directories."
     end
 
-    desc "generate WORKSPACE_NAME", "Generate BigQuery schema for a workspace"
-    def generate(name)
-      workspace = API::Workspace.new(name, logger: logger)
-      workspace.generate
-      logger.info "Generated BigQuery schema for workspace '#{name}'."
+    desc "generate", "Generate BigQuery schema for all workspaces in the project"
+    def generate
+      name = Pathname.pwd.basename.to_s
+      project = API::Project.new(name, logger: logger)
+      project.generate
+      logger.info "Generated BigQuery schema for all workspaces in the project."
     end
   end
 end
