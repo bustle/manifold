@@ -10,7 +10,7 @@ RSpec.describe Manifold::API::Workspace do
 
   include_context "with template files"
 
-  it { is_expected.to have_attributes(name: name) }
+  it { is_expected.to have_attributes(name:) }
 
   describe ".add" do
     before { workspace.add }

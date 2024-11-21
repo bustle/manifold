@@ -9,7 +9,7 @@ RSpec.describe Manifold::API::Project do
 
   include_context "with template files"
 
-  it { is_expected.to have_attributes(name: name) }
+  it { is_expected.to have_attributes(name:) }
 
   describe ".create" do
     before { described_class.create(name) }
