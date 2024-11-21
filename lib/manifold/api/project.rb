@@ -7,9 +7,9 @@ module Manifold
       attr_reader :name, :logger, :directory
 
       def initialize(name, logger: Logger.new($stdout), directory: Pathname.pwd.join(name))
-        self.name = name
-        self.logger = logger
-        self.directory = Pathname(directory)
+        @name = name
+        @logger = logger
+        @directory = Pathname(directory)
       end
 
       def self.create(name, directory: Pathname.pwd.join(name))
@@ -39,8 +39,6 @@ module Manifold
       def workspace_directories
         workspaces_directory.children.select(&:directory?)
       end
-
-      attr_writer :name, :logger, :directory
     end
   end
 end

@@ -11,8 +11,8 @@ module Manifold
       ).freeze
 
       def initialize(name, template_path: DEFAULT_TEMPLATE_PATH)
-        self.name = name
-        self.template_path = Pathname(template_path)
+        @name = name
+        @template_path = Pathname(template_path)
       end
 
       def add
@@ -21,8 +21,6 @@ module Manifold
       end
 
       private
-
-      attr_writer :name, :template_path
 
       def directory
         Pathname.pwd.join("vectors")

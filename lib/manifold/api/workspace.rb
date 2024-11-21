@@ -11,8 +11,8 @@ module Manifold
       ).freeze
 
       def initialize(name, template_path: DEFAULT_TEMPLATE_PATH, logger: Logger.new($stdout))
-        self.name = name
-        self.template_path = template_path
+        @name = name
+        @template_path = template_path
         @logger = logger
         @vector_service = Services::VectorService.new(logger)
       end
@@ -99,8 +99,6 @@ module Manifold
       def vectors
         manifold_yaml["vectors"]
       end
-
-      attr_writer :name, :template_path
     end
   end
 end
