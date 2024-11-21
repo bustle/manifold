@@ -3,7 +3,7 @@
 RSpec.describe Manifold::API::Workspace do
   include FakeFS::SpecHelpers
 
-  subject(:workspace) { described_class.new(name, logger: logger) }
+  subject(:workspace) { described_class.new(name, logger:) }
 
   let(:logger) { instance_spy(Logger) }
   let(:name) { "people" }

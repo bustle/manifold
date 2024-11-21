@@ -48,13 +48,13 @@ RSpec.describe Manifold::API::Project do
   end
 
   describe "#generate" do
-    let(:workspace1) { instance_double(Manifold::API::Workspace) }
-    let(:workspace2) { instance_double(Manifold::API::Workspace) }
+    let(:workspace_one) { instance_double(Manifold::API::Workspace) }
+    let(:workspace_two) { instance_double(Manifold::API::Workspace) }
 
     before do
       described_class.create(name)
 
-      [workspace1, workspace2].each do |workspace|
+      [workspace_one, workspace_two].each do |workspace|
         project.workspaces << workspace
         allow(workspace).to receive(:generate)
       end
@@ -62,7 +62,7 @@ RSpec.describe Manifold::API::Project do
 
     it "calls generate on each workspace" do
       project.generate
-      expect([workspace1, workspace2]).to all(have_received(:generate))
+      expect([workspace_one, workspace_two]).to all(have_received(:generate))
     end
   end
 end

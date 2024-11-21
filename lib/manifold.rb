@@ -6,7 +6,7 @@ require "pathname"
 require "thor"
 require "yaml"
 
-Dir[File.join(__dir__, "manifold", "**", "*.rb")].sort.each do |file|
+Dir[File.join(__dir__, "manifold", "**", "*.rb")].each do |file|
   require file
 end
 

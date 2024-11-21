@@ -19,7 +19,7 @@ module Manifold
       end
 
       def workspaces
-        @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger: logger) }
+        @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger:) }
       end
 
       def generate

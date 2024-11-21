@@ -18,7 +18,7 @@ module Manifold
       end
 
       def self.from_directory(directory, logger: Logger.new($stdout))
-        new(directory.basename.to_s, logger: logger)
+        new(directory.basename.to_s, logger:)
       end
 
       def add
