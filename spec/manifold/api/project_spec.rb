@@ -32,11 +32,11 @@ RSpec.describe Manifold::API::Project do
   end
 
   context "with directory" do
-    subject(:project) { described_class.new(name, directory: directory) }
+    subject(:project) { described_class.new(name, directory:) }
 
     let(:directory) { Pathname.pwd.join("supplied_directory") }
 
-    it { is_expected.to have_attributes(directory: directory) }
+    it { is_expected.to have_attributes(directory:) }
 
     it "uses it as the base for the vectors directory" do
       expect(project.vectors_directory).to eq directory.join("vectors")

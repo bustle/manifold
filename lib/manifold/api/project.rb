@@ -13,7 +13,7 @@ module Manifold
       end
 
       def self.create(name, directory: Pathname.pwd.join(name))
-        new(name, directory: directory).tap do |project|
+        new(name, directory:).tap do |project|
           [project.workspaces_directory, project.vectors_directory].each(&:mkpath)
         end
       end
