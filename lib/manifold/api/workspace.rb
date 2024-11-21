@@ -10,14 +10,30 @@ module Manifold
         "../templates/workspace_template.yml", __dir__
       ).freeze
 
-      def initialize(name, template_path: DEFAULT_TEMPLATE_PATH)
+      def initialize(name, template_path: DEFAULT_TEMPLATE_PATH, logger: Logger.new($stdout))
         self.name = name
         self.template_path = template_path
+        @logger = logger
+        @vector_service = Services::VectorService.new(logger)
       end
 
       def add
         [tables_directory, routines_directory].each(&:mkpath)
         FileUtils.cp(template_path, manifold_path)
+      end
+
+      def generate
+        return unless manifold_exists?
+
+        config = YAML.safe_load_file(manifold_path)
+        return if config["vectors"].nil? || config["vectors"].empty?
+
+        fields = config["vectors"].reduce([]) do |list, vector|
+          @logger.info("Loading vector schema for '#{vector}'.")
+          [*@vector_service.load_vector_schema(vector), *list]
+        end
+
+        create_dimensions_file(fields)
       end
 
       def tables_directory
@@ -46,6 +62,26 @@ module Manifold
 
       def directory
         Pathname.pwd.join("workspaces", name)
+      end
+
+      def create_dimensions_file(fields)
+        tables_directory.mkpath
+        dimensions = dimensions_schema(fields)
+
+        dimensions_path.write(dimensions)
+        @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
+      end
+
+      def dimensions_schema(fields)
+        JSON.pretty_generate([
+                               { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
+                               { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED",
+                                 "fields" => fields }
+                             ]).concat("\n")
+      end
+
+      def dimensions_path
+        tables_directory.join("dimensions.json")
       end
 
       attr_writer :name, :template_path
