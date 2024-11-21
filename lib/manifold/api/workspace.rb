@@ -71,16 +71,20 @@ module Manifold
 
       def create_dimensions_file(fields)
         tables_directory.mkpath
-        dimensions_path.write(dimensions_schema(fields))
+        dimensions_path.write(dimensions_schema_json(fields).concat("\n"))
         @logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
       end
 
       def dimensions_schema(fields)
-        JSON.pretty_generate([
-                               { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
-                               { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED",
-                                 "fields" => fields }
-                             ]).concat("\n")
+        [
+          { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
+          { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED",
+            "fields" => fields }
+        ]
+      end
+
+      def dimensions_schema_json(fields)
+        JSON.pretty_generate(dimensions_schema(fields))
       end
 
       def dimensions_path
