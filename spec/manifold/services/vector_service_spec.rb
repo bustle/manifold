@@ -57,5 +57,19 @@ RSpec.describe Manifold::Services::VectorService do
         )
       end
     end
+
+    context "when vector configuration is invalid" do
+      before do
+        Pathname.pwd.join("vectors").mkpath
+        config_path = Pathname.pwd.join("vectors", "#{vector_name}.yml")
+        config_path.write("invalid_key: [value1, value2")
+      end
+
+      it "raises an error" do
+        expect { service.load_vector_schema(vector_name) }.to raise_error(
+          /Invalid YAML in vector configuration/
+        )
+      end
+    end
   end
 end

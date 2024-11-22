@@ -10,11 +10,13 @@ module Manifold
 
       def load_vector_schema(vector_name)
         path = config_path(vector_name)
-        raise "Vector configuration not found: #{path}" unless path.file?
-
         config = YAML.safe_load_file(path)
         fields = transform_attributes_to_schema(config["attributes"])
         { "name" => vector_name.downcase, "type" => "RECORD", "fields" => fields }
+      rescue Errno::ENOENT, Errno::EISDIR
+        raise "Vector configuration not found: #{path}"
+      rescue Psych::Exception => e
+        raise "Invalid YAML in vector configuration #{path}: #{e.message}"
       end
 
       private
