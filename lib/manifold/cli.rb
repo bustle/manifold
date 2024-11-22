@@ -11,14 +11,12 @@ module Manifold
 
       self.logger = logger
       logger.level = Logger::INFO
-
-      self.bq_service = Services::BigQueryService.new(logger)
     end
 
     desc "init NAME", "Generate a new umbrella project for data management"
     def init(name)
       Manifold::API::Project.create(name)
-      logger.info "Created umbrella project '#{name}' with projects and vectors directories."
+      logger.info "Created umbrella project '#{name}' with workspaces and vectors directories."
     end
 
     desc "vectors SUBCOMMAND ...ARGS", "Manage vectors"
@@ -47,14 +45,12 @@ module Manifold
       logger.info "Added workspace '#{name}' with tables and routines directories."
     end
 
-    desc "generate PROJECT_NAME SERVICE", "Generate services for a project"
-    def generate(project_name, service)
-      case service
-      when "bq"
-        bq_service.generate_dimensions_schema(project_name)
-      else
-        logger.error("Unsupported service: #{service}")
-      end
+    desc "generate", "Generate BigQuery schema for all workspaces in the project"
+    def generate
+      name = Pathname.pwd.basename.to_s
+      project = API::Project.new(name, directory: Pathname.pwd, logger:)
+      project.generate
+      logger.info "Generated BigQuery schema for all workspaces in the project."
     end
   end
 end

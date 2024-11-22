@@ -7,7 +7,7 @@ require "simplecov"
 require "simplecov-json"
 require "simplecov-lcov"
 require "fakefs/spec_helpers"
-Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
+Dir[File.join(__dir__, "support", "**", "*.rb")].each { |f| require f }
 
 SimpleCov::Formatter::LcovFormatter.config do |c|
   c.report_with_single_file = true

@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "A CLI for managing data infrastructures in BigQuery"
   spec.homepage = "https://github.com/bustle/manifold"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.0.0"
+  spec.required_ruby_version = ">= 3.1.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/bustle/manifold"
@@ -32,4 +32,5 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "thor"
+  spec.metadata["rubygems_mfa_required"] = "true"
 end

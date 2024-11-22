@@ -8,7 +8,7 @@ RSpec.describe Manifold::API::Vector do
 
   let(:name) { "page" }
 
-  it { is_expected.to have_attributes(name: name) }
+  it { is_expected.to have_attributes(name:) }
 
   describe ".add" do
     before { vector.add }
