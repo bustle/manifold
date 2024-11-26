@@ -47,8 +47,9 @@ module Manifold
 
     desc "generate", "Generate BigQuery schema for all workspaces in the project"
     def generate
-      name = Pathname.pwd.basename.to_s
-      project = API::Project.new(name, directory: Pathname.pwd, logger:)
+      path = Pathname.pwd
+      name = path.basename.to_s
+      project = API::Project.new(name, directory: path, logger:)
       project.generate
       logger.info "Generated BigQuery schema for all workspaces in the project."
     end

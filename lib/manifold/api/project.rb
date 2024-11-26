@@ -24,6 +24,7 @@ module Manifold
 
       def generate
         workspaces.each(&:generate)
+        generate_terraform_entrypoint
       end
 
       def workspaces_directory
@@ -38,6 +39,46 @@ module Manifold
 
       def workspace_directories
         workspaces_directory.children.select(&:directory?)
+      end
+
+      def generate_terraform_entrypoint
+        terraform_config = {
+          "terraform" => {
+            "required_providers" => {
+              "google" => {
+                "source" => "hashicorp/google",
+                "version" => "~> 4.0"
+              }
+            }
+          },
+          "provider" => {
+            "google" => {
+              "project" => "${var.project_id}"
+            }
+          },
+          "variable" => {
+            "project_id" => {
+              "description" => "The GCP project ID where resources will be created",
+              "type" => "string"
+            }
+          },
+          "module" => generate_workspace_modules
+        }
+
+        terraform_path.write(JSON.pretty_generate(terraform_config))
+      end
+
+      def generate_workspace_modules
+        workspaces.each_with_object({}) do |workspace, modules|
+          modules[workspace.name] = {
+            "source" => "./workspaces/#{workspace.name}",
+            "project_id" => "${var.project_id}"
+          }
+        end
+      end
+
+      def terraform_path
+        directory.join("main.tf.json")
       end
     end
   end

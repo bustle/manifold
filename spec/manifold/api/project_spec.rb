@@ -48,8 +48,8 @@ RSpec.describe Manifold::API::Project do
   end
 
   describe "#generate" do
-    let(:workspace_one) { instance_double(Manifold::API::Workspace) }
-    let(:workspace_two) { instance_double(Manifold::API::Workspace) }
+    let(:workspace_one) { instance_double(Manifold::API::Workspace, name: "workspace_one") }
+    let(:workspace_two) { instance_double(Manifold::API::Workspace, name: "workspace_two") }
 
     before do
       described_class.create(name)
@@ -63,6 +63,26 @@ RSpec.describe Manifold::API::Project do
     it "calls generate on each workspace" do
       project.generate
       expect([workspace_one, workspace_two]).to all(have_received(:generate))
+    end
+
+    it "creates a terraform configuration file" do
+      project.generate
+      expect(project.directory.join("main.tf.json")).to be_file
+    end
+
+    it "includes workspace modules in the terraform configuration" do
+      project.generate
+      config = JSON.parse(project.directory.join("main.tf.json").read)
+      expect(config["module"]).to include(
+        "workspace_one" => {
+          "source" => "./workspaces/workspace_one",
+          "project_id" => "${var.project_id}"
+        },
+        "workspace_two" => {
+          "source" => "./workspaces/workspace_two",
+          "project_id" => "${var.project_id}"
+        }
+      )
     end
   end
 end
