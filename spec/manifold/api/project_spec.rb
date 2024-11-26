@@ -60,31 +60,40 @@ RSpec.describe Manifold::API::Project do
       end
     end
 
+    context "with generate_terraform: false" do
+      it "does not generate terraform configurations" do
+        project.generate(generate_terraform: false)
+        expect(project.directory.join("main.tf.json")).not_to be_file
+      end
+    end
+
+    context "with generate_terraform: true" do
+      it "creates a terraform configuration file" do
+        project.generate(generate_terraform: true)
+        expect(project.directory.join("main.tf.json")).to be_file
+      end
+
+      it "includes workspace modules in the terraform configuration" do
+        project.generate(generate_terraform: true)
+        config = parse_terraform_config(project)
+        expect(config["module"]).to include(expected_workspace_modules)
+      end
+
+      def parse_terraform_config(project)
+        JSON.parse(project.directory.join("main.tf.json").read)
+      end
+
+      def expected_workspace_modules
+        {
+          "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.PROJECT_ID}" },
+          "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.PROJECT_ID}" }
+        }
+      end
+    end
+
     it "calls generate on each workspace" do
       project.generate
       expect([workspace_one, workspace_two]).to all(have_received(:generate))
-    end
-
-    it "creates a terraform configuration file" do
-      project.generate
-      expect(project.directory.join("main.tf.json")).to be_file
-    end
-
-    it "includes workspace modules in the terraform configuration" do
-      project.generate
-      config = parse_terraform_config(project)
-      expect(config["module"]).to include(expected_workspace_modules)
-    end
-
-    def parse_terraform_config(project)
-      JSON.parse(project.directory.join("main.tf.json").read)
-    end
-
-    def expected_workspace_modules
-      {
-        "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.PROJECT_ID}" },
-        "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.PROJECT_ID}" }
-      }
     end
   end
 end

@@ -26,11 +26,11 @@ module Manifold
         FileUtils.cp(template_path, manifold_path)
       end
 
-      def generate
+      def generate(generate_terraform: false)
         return unless manifold_exists? && any_vectors?
 
         generate_dimensions
-        generate_terraform
+        do_generate_terraform if generate_terraform
         logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
       end
 
@@ -101,7 +101,7 @@ module Manifold
         manifold_yaml["vectors"]
       end
 
-      def generate_terraform
+      def do_generate_terraform
         config = Terraform::WorkspaceConfiguration.new(name)
         config.write(terraform_main_path)
       end
