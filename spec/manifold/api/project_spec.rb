@@ -82,8 +82,8 @@ RSpec.describe Manifold::API::Project do
 
     def expected_workspace_modules
       {
-        "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.project_id}" },
-        "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.project_id}" }
+        "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.PROJECT_ID}" },
+        "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.PROJECT_ID}" }
       }
     end
   end

@@ -109,10 +109,6 @@ module Manifold
       def terraform_main_path
         directory.join("main.tf.json")
       end
-
-      def terraform_variables_path
-        directory.join("variables.tf.json")
-      end
     end
   end
 end

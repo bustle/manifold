@@ -39,7 +39,7 @@ module Manifold
       def provider_block
         {
           "google" => {
-            "project" => "${var.project_id}"
+            "project" => "${var.PROJECT_ID}"
           }
         }
       end
@@ -57,7 +57,7 @@ module Manifold
         workspaces.each_with_object({}) do |workspace, modules|
           modules[workspace.name] = {
             "source" => "./workspaces/#{workspace.name}",
-            "project_id" => "${var.project_id}"
+            "project_id" => "${var.PROJECT_ID}"
           }
         end
       end
