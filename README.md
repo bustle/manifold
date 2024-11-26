@@ -61,7 +61,29 @@ manifold add <data_project_name>
 After you fill out the manifold.yml file, this command generates the necessary BigQuery schema files based on the specified dimensions and metrics.
 
 ```bash
-manifold generate <data_project_name> bq
+manifold generate
+```
+
+4. **Generate Terraform Configuration (Optional)**
+
+Manifold can optionally generate Terraform configurations for managing your BigQuery resources. To generate both BigQuery schemas and Terraform configurations, use the `--tf` flag:
+
+```bash
+manifold generate --tf
+```
+
+This will create:
+
+- A root `main.tf.json` file that sets up the Google Cloud provider and workspace modules
+- Individual workspace configurations in `workspaces/<workspace_name>/main.tf.json`
+- Dataset and table definitions that reference your generated BigQuery schemas
+
+The generated Terraform configurations use the Google Cloud provider and expect a `PROJECT_ID` variable to be set. You can apply these configurations using standard Terraform commands:
+
+```bash
+terraform init
+terraform plan -var="PROJECT_ID=your-project-id"
+terraform apply -var="PROJECT_ID=your-project-id"
 ```
 
 ## Manifold Configuration
