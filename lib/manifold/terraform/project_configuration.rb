@@ -4,11 +4,14 @@ module Manifold
   module Terraform
     # Represents a Terraform configuration for a Manifold project.
     class ProjectConfiguration < Configuration
-      attr_reader :workspaces
+      attr_reader :workspaces, :provider_version
 
-      def initialize(workspaces)
+      DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION = "6.12.0"
+
+      def initialize(workspaces, provider_version: DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION)
         super()
         @workspaces = workspaces
+        @provider_version = provider_version
       end
 
       def as_json
@@ -27,7 +30,7 @@ module Manifold
           "required_providers" => {
             "google" => {
               "source" => "hashicorp/google",
-              "version" => "~> 4.0"
+              "version" => provider_version
             }
           }
         }

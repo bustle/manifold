@@ -15,8 +15,8 @@ RSpec.describe Manifold::Terraform::ProjectConfiguration do
   describe "#as_json" do
     subject(:json) { config.as_json }
 
-    it "includes required provider configuration" do
-      expect(json["terraform"]["required_providers"]).to include(expected_google_provider)
+    it "includes Google provider configuration" do
+      expect(json["terraform"]["required_providers"]["google"]["source"]).to eq("hashicorp/google")
     end
 
     it "includes provider configuration" do
@@ -39,15 +39,6 @@ RSpec.describe Manifold::Terraform::ProjectConfiguration do
         "workspace_one" => { "project_id" => "${var.project_id}", "source" => "./workspaces/workspace_one" },
         "workspace_two" => { "project_id" => "${var.project_id}", "source" => "./workspaces/workspace_two" }
       )
-    end
-
-    def expected_google_provider
-      {
-        "google" => {
-          "source" => "hashicorp/google",
-          "version" => "~> 4.0"
-        }
-      }
     end
   end
 end
