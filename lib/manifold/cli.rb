@@ -51,7 +51,7 @@ module Manifold
       path = Pathname.pwd
       name = path.basename.to_s
       project = API::Project.new(name, directory: path, logger:)
-      project.generate(generate_terraform: options[:tf])
+      project.generate(with_terraform: options[:tf])
       logger.info "Generated BigQuery schema for all workspaces in the project."
     end
   end

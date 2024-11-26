@@ -60,21 +60,21 @@ RSpec.describe Manifold::API::Project do
       end
     end
 
-    context "with generate_terraform: false" do
+    context "with with_terraform: false" do
       it "does not generate terraform configurations" do
-        project.generate(generate_terraform: false)
+        project.generate(with_terraform: false)
         expect(project.directory.join("main.tf.json")).not_to be_file
       end
     end
 
-    context "with generate_terraform: true" do
+    context "with with_terraform: true" do
       it "creates a terraform configuration file" do
-        project.generate(generate_terraform: true)
+        project.generate(with_terraform: true)
         expect(project.directory.join("main.tf.json")).to be_file
       end
 
       it "includes workspace modules in the terraform configuration" do
-        project.generate(generate_terraform: true)
+        project.generate(with_terraform: true)
         config = parse_terraform_config(project)
         expect(config["module"]).to include(expected_workspace_modules)
       end

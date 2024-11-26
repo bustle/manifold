@@ -44,25 +44,25 @@ RSpec.describe Manifold::CLI do
 
     context "when called with --tf option" do
       before do
-        allow(mock_project).to receive(:generate).with(generate_terraform: true)
+        allow(mock_project).to receive(:generate).with(with_terraform: true)
       end
 
       it "generates terraform configurations" do
         cli.options = { tf: true }
         cli.generate
-        expect(mock_project).to have_received(:generate).with(generate_terraform: true)
+        expect(mock_project).to have_received(:generate).with(with_terraform: true)
       end
     end
 
     context "when called without --tf option" do
       before do
-        allow(mock_project).to receive(:generate).with(generate_terraform: false)
+        allow(mock_project).to receive(:generate).with(with_terraform: false)
       end
 
       it "does not generate terraform configurations" do
         cli.options = { tf: false }
         cli.generate
-        expect(mock_project).to have_received(:generate).with(generate_terraform: false)
+        expect(mock_project).to have_received(:generate).with(with_terraform: false)
       end
     end
   end

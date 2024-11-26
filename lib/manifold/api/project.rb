@@ -22,9 +22,9 @@ module Manifold
         @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger:) }
       end
 
-      def generate(generate_terraform: false)
-        workspaces.each { |w| w.generate(generate_terraform:) }
-        generate_terraform_entrypoint if generate_terraform
+      def generate(with_terraform: false)
+        workspaces.each { |w| w.generate(with_terraform:) }
+        generate_terraform_entrypoint if with_terraform
       end
 
       def workspaces_directory
