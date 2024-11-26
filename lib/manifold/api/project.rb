@@ -42,30 +42,8 @@ module Manifold
       end
 
       def generate_terraform_entrypoint
-        terraform_config = {
-          "terraform" => {
-            "required_providers" => {
-              "google" => {
-                "source" => "hashicorp/google",
-                "version" => "~> 4.0"
-              }
-            }
-          },
-          "provider" => {
-            "google" => {
-              "project" => "${var.project_id}"
-            }
-          },
-          "variable" => {
-            "project_id" => {
-              "description" => "The GCP project ID where resources will be created",
-              "type" => "string"
-            }
-          },
-          "module" => generate_workspace_modules
-        }
-
-        terraform_path.write(JSON.pretty_generate(terraform_config))
+        config = Terraform::ProjectConfiguration.new(workspaces)
+        config.write(directory.join("main.tf.json"))
       end
 
       def generate_workspace_modules

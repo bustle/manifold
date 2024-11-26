@@ -72,17 +72,19 @@ RSpec.describe Manifold::API::Project do
 
     it "includes workspace modules in the terraform configuration" do
       project.generate
-      config = JSON.parse(project.directory.join("main.tf.json").read)
-      expect(config["module"]).to include(
-        "workspace_one" => {
-          "source" => "./workspaces/workspace_one",
-          "project_id" => "${var.project_id}"
-        },
-        "workspace_two" => {
-          "source" => "./workspaces/workspace_two",
-          "project_id" => "${var.project_id}"
-        }
-      )
+      config = parse_terraform_config(project)
+      expect(config["module"]).to include(expected_workspace_modules)
+    end
+
+    def parse_terraform_config(project)
+      JSON.parse(project.directory.join("main.tf.json").read)
+    end
+
+    def expected_workspace_modules
+      {
+        "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.project_id}" },
+        "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.project_id}" }
+      }
     end
   end
 end

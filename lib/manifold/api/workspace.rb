@@ -102,46 +102,8 @@ module Manifold
       end
 
       def generate_terraform
-        generate_terraform_config
-        generate_terraform_variables
-      end
-
-      def generate_terraform_config
-        tf = {
-          "resource" => {
-            "google_bigquery_dataset" => {
-              name => {
-                "dataset_id" => name,
-                "project" => "${var.PROJECT_ID}",
-                "location" => "US"
-              }
-            },
-            "google_bigquery_table" => {
-              "dimensions" => {
-                "dataset_id" => name,
-                "project" => "var.PROJECT_ID",
-                "table_id" => "dimensions",
-                "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
-                "depends_on" => ["google_bigquery_dataset.#{name}"]
-              }
-            }
-          }
-        }
-
-        terraform_main_path.write(JSON.pretty_generate(tf))
-      end
-
-      def generate_terraform_variables
-        variables_config = {
-          "variable" => {
-            "PROJECT_ID" => {
-              "description" => "The GCP project ID where resources will be created",
-              "type" => "string"
-            }
-          }
-        }
-
-        terraform_variables_path.write(JSON.pretty_generate(variables_config))
+        config = Terraform::WorkspaceConfiguration.new(name)
+        config.write(terraform_main_path)
       end
 
       def terraform_main_path
