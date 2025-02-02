@@ -10,8 +10,8 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   describe "#as_json" do
     subject(:json) { config.as_json }
 
-    it "includes PROJECT_ID variable" do
-      expect(json["variable"]["PROJECT_ID"]).to include(
+    it "includes project_id variable" do
+      expect(json["variable"]["project_id"]).to include(
         "description" => "The GCP project ID where resources will be created",
         "type" => "string"
       )
@@ -32,7 +32,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
     def expected_dataset
       {
         "dataset_id" => name,
-        "project" => "${var.PROJECT_ID}",
+        "project" => "${var.project_id}",
         "location" => "US"
       }
     end
@@ -40,7 +40,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
     def expected_dimensions_table
       {
         "dataset_id" => name,
-        "project" => "${var.PROJECT_ID}",
+        "project" => "${var.project_id}",
         "table_id" => "dimensions",
         "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
         "depends_on" => ["google_bigquery_dataset.#{name}"]

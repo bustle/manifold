@@ -78,12 +78,12 @@ This will create:
 - Individual workspace configurations in `workspaces/<workspace_name>/main.tf.json`
 - Dataset and table definitions that reference your generated BigQuery schemas
 
-The generated Terraform configurations use the Google Cloud provider and expect a `PROJECT_ID` variable to be set. You can apply these configurations using standard Terraform commands:
+The generated Terraform configurations use the Google Cloud provider and expect a `project_id` variable to be set. You can apply these configurations using standard Terraform commands:
 
 ```bash
 terraform init
-terraform plan -var="PROJECT_ID=your-project-id"
-terraform apply -var="PROJECT_ID=your-project-id"
+terraform plan -var="project_id=your-project-id"
+terraform apply -var="project_id=your-project-id"
 ```
 
 ## Manifold Configuration

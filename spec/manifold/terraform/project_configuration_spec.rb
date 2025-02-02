@@ -22,7 +22,7 @@ RSpec.describe Manifold::Terraform::ProjectConfiguration do
     it "includes provider configuration" do
       expect(json["provider"]).to include(
         "google" => {
-          "project" => "${var.PROJECT_ID}"
+          "project" => "${var.project_id}"
         }
       )
     end
@@ -36,8 +36,8 @@ RSpec.describe Manifold::Terraform::ProjectConfiguration do
 
     it "writes workspace modules with correct project_id and source" do
       expect(json["module"]).to include(
-        "workspace_one" => { "project_id" => "${var.PROJECT_ID}", "source" => "./workspaces/workspace_one" },
-        "workspace_two" => { "project_id" => "${var.PROJECT_ID}", "source" => "./workspaces/workspace_two" }
+        "workspace_one" => { "project_id" => "${var.project_id}", "source" => "./workspaces/workspace_one" },
+        "workspace_two" => { "project_id" => "${var.project_id}", "source" => "./workspaces/workspace_two" }
       )
     end
   end

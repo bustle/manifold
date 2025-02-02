@@ -25,7 +25,7 @@ module Manifold
 
       def variables_block
         {
-          "PROJECT_ID" => {
+          "project_id" => {
             "description" => "The GCP project ID where resources will be created",
             "type" => "string"
           }
@@ -36,7 +36,7 @@ module Manifold
         {
           name => {
             "dataset_id" => name,
-            "project" => "${var.PROJECT_ID}",
+            "project" => "${var.project_id}",
             "location" => "US"
           }
         }
@@ -46,7 +46,7 @@ module Manifold
         {
           "dimensions" => {
             "dataset_id" => name,
-            "project" => "${var.PROJECT_ID}",
+            "project" => "${var.project_id}",
             "table_id" => "dimensions",
             "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
             "depends_on" => ["google_bigquery_dataset.#{name}"]
