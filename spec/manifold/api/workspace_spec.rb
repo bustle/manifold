@@ -129,5 +129,82 @@ RSpec.describe Manifold::API::Workspace do
         expect(workspace.generate).to be_nil
       end
     end
+
+    context "when generating with terraform" do
+      let(:vector_service) { instance_double(Manifold::Services::VectorService) }
+
+      before do
+        configure_vector_service
+        setup_workspace_files
+        workspace.generate(with_terraform: true)
+      end
+
+      it "generates terraform configuration" do
+        expect(workspace.terraform_main_path).to be_file
+      end
+
+      it "loads vector configurations" do
+        expect(vector_service).to have_received(:load_vector_config).with("Page")
+      end
+
+      it "includes vector configurations in terraform" do
+        config = JSON.parse(workspace.terraform_main_path.read)
+        expect(config["resource"]["google_bigquery_routine"]).not_to be_nil
+      end
+
+      def configure_vector_service
+        allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
+        configure_vector_schema
+        configure_vector_config
+      end
+
+      def configure_vector_schema
+        allow(vector_service).to receive(:load_vector_schema)
+          .with("Page")
+          .and_return(vector_schema)
+      end
+
+      def configure_vector_config
+        allow(vector_service).to receive(:load_vector_config)
+          .with("Page")
+          .and_return(vector_config)
+      end
+
+      def setup_workspace_files
+        Pathname.pwd.join("lib/routines").mkpath
+        Pathname.pwd.join("lib/routines/select_pages.sql")
+                .write("SELECT id, STRUCT(url, title) AS dimensions FROM pages")
+
+        workspace.add
+        workspace.manifold_path.write(<<~YAML)
+          vectors:
+            - Page
+        YAML
+      end
+
+      def vector_schema
+        {
+          "name" => "page",
+          "type" => "RECORD",
+          "fields" => [
+            { "name" => "url", "type" => "STRING", "mode" => "NULLABLE" },
+            { "name" => "title", "type" => "STRING", "mode" => "NULLABLE" }
+          ]
+        }
+      end
+
+      def vector_config
+        {
+          "name" => "page",
+          "attributes" => {
+            "url" => "string",
+            "title" => "string"
+          },
+          "merge" => {
+            "source" => "lib/routines/select_pages.sql"
+          }
+        }
+      end
+    end
   end
 end

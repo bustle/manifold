@@ -56,6 +56,10 @@ module Manifold
         directory.join("manifold.yml")
       end
 
+      def terraform_main_path
+        directory.join("main.tf.json")
+      end
+
       private
 
       def directory
@@ -103,11 +107,11 @@ module Manifold
 
       def generate_terraform
         config = Terraform::WorkspaceConfiguration.new(name)
+        vectors.each do |vector|
+          vector_config = @vector_service.load_vector_config(vector)
+          config.add_vector(vector_config)
+        end
         config.write(terraform_main_path)
-      end
-
-      def terraform_main_path
-        directory.join("main.tf.json")
       end
     end
   end

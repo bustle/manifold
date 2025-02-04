@@ -5,3 +5,7 @@ attributes:
   # id: STRING
   # created_at: TIMESTAMP
   # status: STRING
+
+# Optionally, reference a view specifying how to select vector dimensions
+# merge:
+#   source: lib/views/select_my_vector.sql

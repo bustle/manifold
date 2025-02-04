@@ -19,6 +19,16 @@ module Manifold
         raise "Invalid YAML in vector configuration #{path}: #{e.message}"
       end
 
+      def load_vector_config(vector_name)
+        path = config_path(vector_name)
+        config = YAML.safe_load_file(path)
+        config.merge("name" => vector_name.downcase)
+      rescue Errno::ENOENT, Errno::EISDIR
+        raise "Vector configuration not found: #{path}"
+      rescue Psych::Exception => e
+        raise "Invalid YAML in vector configuration #{path}: #{e.message}"
+      end
+
       private
 
       def transform_attributes_to_schema(attributes)
