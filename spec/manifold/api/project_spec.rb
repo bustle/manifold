@@ -48,8 +48,8 @@ RSpec.describe Manifold::API::Project do
   end
 
   describe "#generate" do
-    let(:workspace_one) { instance_double(Manifold::API::Workspace) }
-    let(:workspace_two) { instance_double(Manifold::API::Workspace) }
+    let(:workspace_one) { instance_double(Manifold::API::Workspace, name: "workspace_one") }
+    let(:workspace_two) { instance_double(Manifold::API::Workspace, name: "workspace_two") }
 
     before do
       described_class.create(name)
@@ -57,6 +57,37 @@ RSpec.describe Manifold::API::Project do
       [workspace_one, workspace_two].each do |workspace|
         project.workspaces << workspace
         allow(workspace).to receive(:generate)
+      end
+    end
+
+    context "with with_terraform: false" do
+      it "does not generate terraform configurations" do
+        project.generate(with_terraform: false)
+        expect(project.directory.join("main.tf.json")).not_to be_file
+      end
+    end
+
+    context "with with_terraform: true" do
+      it "creates a terraform configuration file" do
+        project.generate(with_terraform: true)
+        expect(project.directory.join("main.tf.json")).to be_file
+      end
+
+      it "includes workspace modules in the terraform configuration" do
+        project.generate(with_terraform: true)
+        config = parse_terraform_config(project)
+        expect(config["module"]).to include(expected_workspace_modules)
+      end
+
+      def parse_terraform_config(project)
+        JSON.parse(project.directory.join("main.tf.json").read)
+      end
+
+      def expected_workspace_modules
+        {
+          "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.project_id}" },
+          "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.project_id}" }
+        }
       end
     end
 

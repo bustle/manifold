@@ -46,10 +46,12 @@ module Manifold
     end
 
     desc "generate", "Generate BigQuery schema for all workspaces in the project"
+    method_option :tf, type: :boolean, desc: "Generate Terraform configurations"
     def generate
-      name = Pathname.pwd.basename.to_s
-      project = API::Project.new(name, directory: Pathname.pwd, logger:)
-      project.generate
+      path = Pathname.pwd
+      name = path.basename.to_s
+      project = API::Project.new(name, directory: path, logger:)
+      project.generate(with_terraform: options[:tf])
       logger.info "Generated BigQuery schema for all workspaces in the project."
     end
   end

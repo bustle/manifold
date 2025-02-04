@@ -22,8 +22,9 @@ module Manifold
         @workspaces ||= workspace_directories.map { |dir| Workspace.from_directory(dir, logger:) }
       end
 
-      def generate
-        workspaces.each(&:generate)
+      def generate(with_terraform: false)
+        workspaces.each { |w| w.generate(with_terraform:) }
+        generate_terraform_entrypoint if with_terraform
       end
 
       def workspaces_directory
@@ -38,6 +39,11 @@ module Manifold
 
       def workspace_directories
         workspaces_directory.children.select(&:directory?)
+      end
+
+      def generate_terraform_entrypoint
+        config = Terraform::ProjectConfiguration.new(workspaces)
+        config.write(directory.join("main.tf.json"))
       end
     end
   end
