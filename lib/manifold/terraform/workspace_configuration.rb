@@ -63,37 +63,44 @@ module Manifold
       def routine_config
         return nil if @vectors.empty?
 
-        routines = @vectors.each_with_object({}) do |vector, acc|
-          next unless vector["merge"]&.fetch("source", nil)
-
-          source_path = Pathname.pwd.join(vector["merge"]["source"])
-          routine_name = "merge_#{vector["name"].downcase}_dimensions"
-
-          acc[routine_name] = {
-            "dataset_id" => name,
-            "project" => "${var.project_id}",
-            "routine_id" => routine_name,
-            "routine_type" => "PROCEDURE",
-            "language" => "SQL",
-            "definition_body" => merge_routine_definition(vector["name"], source_path),
-            "depends_on" => ["google_bigquery_dataset.#{name}"]
-          }
-        end
-
-        routines.empty? ? nil : routines
+        routines = @vectors.filter_map { |vector| build_routine(vector) }
+        routines.empty? ? nil : routines.to_h
       end
 
-      def merge_routine_definition(vector_name, source_path)
-        source_sql = File.read(source_path)
+      def build_routine(vector)
+        return nil unless vector["merge"]&.fetch("source", nil)
+
+        routine_name = "merge_#{vector["name"].downcase}_dimensions"
+        [routine_name, routine_attributes(routine_name, vector)]
+      end
+
+      def routine_attributes(routine_name, vector)
+        {
+          "dataset_id" => name,
+          "project" => "${var.project_id}",
+          "routine_id" => routine_name,
+          "routine_type" => "PROCEDURE",
+          "language" => "SQL",
+          "definition_body" => merge_routine_definition(vector),
+          "depends_on" => ["google_bigquery_dataset.#{name}"]
+        }
+      end
+
+      def merge_routine_definition(vector)
+        source_sql = read_source_sql(vector["merge"]["source"])
         <<~SQL
           MERGE #{name}.Dimensions AS TARGET
           USING (
             #{source_sql}
           ) AS source
           ON source.id = target.id
-          WHEN MATCHED THEN UPDATE SET target.#{vector_name.downcase} = source.dimensions
+          WHEN MATCHED THEN UPDATE SET target.#{vector["name"].downcase} = source.dimensions
           WHEN NOT MATCHED THEN INSERT ROW;
         SQL
+      end
+
+      def read_source_sql(source_path)
+        File.read(Pathname.pwd.join(source_path))
       end
     end
   end

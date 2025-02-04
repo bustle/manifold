@@ -6,5 +6,6 @@ attributes:
   # created_at: TIMESTAMP
   # status: STRING
 
-merge:
-  source: lib/routines/select_my_vector.sql
+# Optionally, specify how to select vector dimensions
+# merge:
+#   source: lib/routines/select_my_vector.sql
