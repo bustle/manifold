@@ -6,6 +6,6 @@ attributes:
   # created_at: TIMESTAMP
   # status: STRING
 
-# Optionally, specify how to select vector dimensions
+# Optionally, reference a view specifying how to select vector dimensions
 # merge:
-#   source: lib/routines/select_my_vector.sql
+#   source: lib/views/select_my_vector.sql
