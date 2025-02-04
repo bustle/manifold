@@ -129,5 +129,67 @@ RSpec.describe Manifold::API::Workspace do
         expect(workspace.generate).to be_nil
       end
     end
+
+    context "when generating with terraform" do
+      let(:vector_name) { "Page" }
+      let(:vector_schema) do
+        {
+          "name" => "page",
+          "type" => "RECORD",
+          "fields" => [
+            { "name" => "url", "type" => "STRING", "mode" => "NULLABLE" },
+            { "name" => "title", "type" => "STRING", "mode" => "NULLABLE" }
+          ]
+        }
+      end
+
+      let(:source_sql) { "SELECT id, STRUCT(url, title) AS dimensions FROM pages" }
+
+      let(:vector_config) do
+        {
+          "name" => vector_name.downcase,
+          "attributes" => {
+            "url" => "string",
+            "title" => "string"
+          },
+          "merge" => {
+            "source" => "lib/routines/select_pages.sql"
+          }
+        }
+      end
+
+      let(:vector_service) { instance_double(Manifold::Services::VectorService) }
+
+      before do
+        # Create the SQL file
+        Pathname.pwd.join("lib/routines").mkpath
+        Pathname.pwd.join("lib/routines/select_pages.sql").write(source_sql)
+
+        allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
+        allow(vector_service).to receive(:load_vector_schema).with(vector_name).and_return(vector_schema)
+        allow(vector_service).to receive(:load_vector_config).with(vector_name).and_return(vector_config)
+
+        workspace.add
+        workspace.manifold_path.write(<<~YAML)
+          vectors:
+            - #{vector_name}
+        YAML
+
+        workspace.generate(with_terraform: true)
+      end
+
+      it "generates terraform configuration" do
+        expect(workspace.terraform_main_path).to be_file
+      end
+
+      it "loads vector configurations" do
+        expect(vector_service).to have_received(:load_vector_config).with(vector_name)
+      end
+
+      it "includes vector configurations in terraform" do
+        config = JSON.parse(workspace.terraform_main_path.read)
+        expect(config["resource"]["google_bigquery_routine"]).not_to be_nil
+      end
+    end
   end
 end

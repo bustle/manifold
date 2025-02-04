@@ -5,3 +5,6 @@ attributes:
   # id: STRING
   # created_at: TIMESTAMP
   # status: STRING
+
+merge:
+  source: lib/routines/select_my_vector.sql
