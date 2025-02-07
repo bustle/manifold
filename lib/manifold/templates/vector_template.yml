@@ -9,7 +9,3 @@ attributes:
   # key_values:
   #   first_key: STRING
   #   second_key: STRING:REQUIRED
-
-# Optionally, reference a view specifying how to select vector dimensions
-# merge:
-#   source: lib/views/select_my_vector.sql

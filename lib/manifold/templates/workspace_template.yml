@@ -3,6 +3,11 @@ vectors:
   # Example:
   # - User
 
+dimensions:
+  # Reference a view specifying how to select vector dimensions
+  merge:
+    source: lib/views/select_my_vector.sql
+
 metrics:
   - name: # Add your metric name here, e.g. Pageviews
 

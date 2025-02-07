@@ -171,14 +171,24 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       def setup_workspace_files
+        setup_routines_directory
+        setup_manifold_config
+      end
+
+      def setup_routines_directory
         Pathname.pwd.join("lib/routines").mkpath
         Pathname.pwd.join("lib/routines/select_pages.sql")
                 .write("SELECT id, STRUCT(url, title) AS dimensions FROM pages")
+      end
 
+      def setup_manifold_config
         workspace.add
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - Page
+          dimensions:
+            merge:
+              source: lib/routines/select_pages.sql
         YAML
       end
 

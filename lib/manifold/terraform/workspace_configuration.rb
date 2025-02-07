@@ -10,11 +10,14 @@ module Manifold
         super()
         @name = name
         @vectors = []
+        @merge_config = nil
       end
 
       def add_vector(vector_config)
         @vectors << vector_config
       end
+
+      attr_writer :merge_config
 
       def as_json
         {
@@ -61,40 +64,34 @@ module Manifold
       end
 
       def routine_config
-        return nil if @vectors.empty?
+        return nil if @vectors.empty? || @merge_config.nil?
 
-        routines = @vectors.filter_map { |vector| build_routine(vector) }
-        routines.empty? ? nil : routines.to_h
+        {
+          "merge_dimensions" => routine_attributes
+        }
       end
 
-      def build_routine(vector)
-        return nil unless vector["merge"]&.fetch("source", nil)
-
-        routine_name = "merge_#{vector["name"].downcase}_dimensions"
-        [routine_name, routine_attributes(routine_name, vector)]
-      end
-
-      def routine_attributes(routine_name, vector)
+      def routine_attributes
         {
           "dataset_id" => name,
           "project" => "${var.project_id}",
-          "routine_id" => routine_name,
+          "routine_id" => "merge_dimensions",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => merge_routine_definition(vector),
+          "definition_body" => merge_routine_definition,
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
 
-      def merge_routine_definition(vector)
-        source_sql = read_source_sql(vector["merge"]["source"])
+      def merge_routine_definition
+        source_sql = read_source_sql(@merge_config["source"])
         <<~SQL
           MERGE #{name}.Dimensions AS TARGET
           USING (
             #{source_sql}
           ) AS source
           ON source.id = target.id
-          WHEN MATCHED THEN UPDATE SET target.#{vector["name"].downcase} = source.dimensions
+          WHEN MATCHED THEN UPDATE SET target.dimensions = source.dimensions
           WHEN NOT MATCHED THEN INSERT ROW;
         SQL
       end

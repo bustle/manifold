@@ -111,6 +111,7 @@ module Manifold
           vector_config = @vector_service.load_vector_config(vector)
           config.add_vector(vector_config)
         end
+        config.merge_config = manifold_yaml["dimensions"]&.fetch("merge", nil) if manifold_yaml["dimensions"]
         config.write(terraform_main_path)
       end
     end
