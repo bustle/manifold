@@ -13,7 +13,9 @@ RSpec.describe Manifold::Services::VectorService do
         "attributes" => {
           "id" => "string",
           "url" => "string",
-          "created_at" => "timestamp"
+          "created_at" => "timestamp",
+          "tags" => "string:repeated",
+          "email" => "string:required"
         }
       }
     end
@@ -25,7 +27,9 @@ RSpec.describe Manifold::Services::VectorService do
         "fields" => [
           { "name" => "id", "type" => "STRING", "mode" => "NULLABLE" },
           { "name" => "url", "type" => "STRING", "mode" => "NULLABLE" },
-          { "name" => "created_at", "type" => "TIMESTAMP", "mode" => "NULLABLE" }
+          { "name" => "created_at", "type" => "TIMESTAMP", "mode" => "NULLABLE" },
+          { "name" => "tags", "type" => "STRING", "mode" => "REPEATED" },
+          { "name" => "email", "type" => "STRING", "mode" => "REQUIRED" }
         ]
       }
     end
