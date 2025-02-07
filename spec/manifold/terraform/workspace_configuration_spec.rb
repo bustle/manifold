@@ -35,7 +35,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       before do
         setup_merge_vector_config
         config.add_vector(vector_config)
-        config.set_merge_config({ "source" => "lib/routines/select_pages.sql" })
+        config.merge_config = { "source" => "lib/routines/select_pages.sql" }
       end
 
       it "includes routine configuration" do

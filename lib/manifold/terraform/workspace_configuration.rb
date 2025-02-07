@@ -17,9 +17,7 @@ module Manifold
         @vectors << vector_config
       end
 
-      def set_merge_config(merge_config)
-        @merge_config = merge_config
-      end
+      attr_writer :merge_config
 
       def as_json
         {
