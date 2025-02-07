@@ -69,21 +69,34 @@ manifold generate
 Manifold can optionally generate Terraform configurations for managing your BigQuery resources. To generate both BigQuery schemas and Terraform configurations, use the `--tf` flag:
 
 ```bash
+# Generate standard Terraform configuration
 manifold generate --tf
+
+# Generate Terraform configuration as a submodule (skips provider configuration)
+manifold generate --tf --submodule
 ```
 
 This will create:
 
-- A root `main.tf.json` file that sets up the Google Cloud provider and workspace modules
+- A root `main.tf.json` file that sets up the Google Cloud provider and workspace modules (unless using `--submodule`)
 - Individual workspace configurations in `workspaces/<workspace_name>/main.tf.json`
 - Dataset and table definitions that reference your generated BigQuery schemas
 
-The generated Terraform configurations use the Google Cloud provider and expect a `project_id` variable to be set. You can apply these configurations using standard Terraform commands:
+The generated Terraform configurations use the Google Cloud provider and expect a `project_id` variable to be set. When using the standard configuration (without `--submodule`), you can apply these configurations directly:
 
 ```bash
 terraform init
 terraform plan -var="project_id=your-project-id"
 terraform apply -var="project_id=your-project-id"
+```
+
+When using `--submodule`, the generated configuration skips provider setup, allowing you to include the project as a module in a larger Terraform configuration:
+
+```hcl
+module "my_manifold_project" {
+  source = "./path/to/manifold/project"
+  project_id = var.project_id
+}
 ```
 
 ## Manifold Configuration

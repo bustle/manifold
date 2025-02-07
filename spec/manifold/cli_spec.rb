@@ -42,27 +42,34 @@ RSpec.describe Manifold::CLI do
   describe "#generate" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
-    context "when called with --tf option" do
-      before do
-        allow(mock_project).to receive(:generate).with(with_terraform: true)
-      end
+    before do
+      allow(mock_project).to receive(:generate)
+    end
 
+    context "when called with --tf option" do
       it "generates terraform configurations" do
-        cli.options = { tf: true }
+        cli.options = { tf: true, submodule: false }
         cli.generate
-        expect(mock_project).to have_received(:generate).with(with_terraform: true)
+        expect(mock_project).to have_received(:generate)
+          .with(with_terraform: true, is_submodule: false)
+      end
+    end
+
+    context "when called with --tf and --submodule options" do
+      it "generates terraform configurations as a submodule" do
+        cli.options = { tf: true, submodule: true }
+        cli.generate
+        expect(mock_project).to have_received(:generate)
+          .with(with_terraform: true, is_submodule: true)
       end
     end
 
     context "when called without --tf option" do
-      before do
-        allow(mock_project).to receive(:generate).with(with_terraform: false)
-      end
-
       it "does not generate terraform configurations" do
-        cli.options = { tf: false }
+        cli.options = { tf: false, submodule: false }
         cli.generate
-        expect(mock_project).to have_received(:generate).with(with_terraform: false)
+        expect(mock_project).to have_received(:generate)
+          .with(with_terraform: false, is_submodule: false)
       end
     end
   end

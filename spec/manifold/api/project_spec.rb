@@ -60,40 +60,60 @@ RSpec.describe Manifold::API::Project do
       end
     end
 
-    context "with with_terraform: false" do
+    it "calls generate on each workspace" do
+      project.generate
+      expect([workspace_one, workspace_two]).to all(have_received(:generate))
+    end
+
+    context "with terraform disabled" do
       it "does not generate terraform configurations" do
         project.generate(with_terraform: false)
         expect(project.directory.join("main.tf.json")).not_to be_file
       end
     end
 
-    context "with with_terraform: true" do
+    context "with terraform enabled" do
       it "creates a terraform configuration file" do
         project.generate(with_terraform: true)
         expect(project.directory.join("main.tf.json")).to be_file
       end
 
-      it "includes workspace modules in the terraform configuration" do
+      it "includes workspace modules in the configuration" do
         project.generate(with_terraform: true)
         config = parse_terraform_config(project)
         expect(config["module"]).to include(expected_workspace_modules)
       end
+    end
 
-      def parse_terraform_config(project)
-        JSON.parse(project.directory.join("main.tf.json").read)
+    context "with terraform submodule" do
+      it "excludes provider configuration" do
+        project.generate(with_terraform: true, is_submodule: true)
+        config = parse_terraform_config(project)
+        expect(config["terraform"]).to be_nil
       end
 
-      def expected_workspace_modules
-        {
-          "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.project_id}" },
-          "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.project_id}" }
-        }
+      it "excludes provider block" do
+        project.generate(with_terraform: true, is_submodule: true)
+        config = parse_terraform_config(project)
+        expect(config["provider"]).to be_nil
+      end
+
+      it "includes workspace modules" do
+        project.generate(with_terraform: true, is_submodule: true)
+        config = parse_terraform_config(project)
+        expect(config["module"]).to include(expected_workspace_modules)
       end
     end
 
-    it "calls generate on each workspace" do
-      project.generate
-      expect([workspace_one, workspace_two]).to all(have_received(:generate))
+    def parse_terraform_config(project)
+      JSON.parse(project.directory.join("main.tf.json").read)
+    end
+
+    def expected_workspace_modules
+      {
+        "workspace_one" => { "source" => "./workspaces/workspace_one", "project_id" => "${var.project_id}" },
+        "workspace_two" => { "source" => "./workspaces/workspace_two", "project_id" => "${var.project_id}" }
+      }
     end
   end
 end
