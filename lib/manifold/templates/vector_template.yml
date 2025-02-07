@@ -6,6 +6,9 @@ attributes:
   # created_at: TIMESTAMP
   # status: STRING
   # names: STRING:REPEATED
+  # key_values:
+  #   first_key: STRING
+  #   second_key: STRING:REQUIRED
 
 # Optionally, reference a view specifying how to select vector dimensions
 # merge:

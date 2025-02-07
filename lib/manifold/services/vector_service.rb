@@ -32,14 +32,33 @@ module Manifold
       private
 
       def transform_attributes_to_schema(attributes)
-        attributes.map do |name, type_str|
-          type, mode = parse_type_and_mode(type_str)
-          {
-            "name" => name,
-            "type" => type.upcase,
-            "mode" => mode
-          }
+        attributes.map { |name, type_def| transform_field(name, type_def) }
+      end
+
+      def transform_field(name, type_def)
+        if type_def.is_a?(Hash)
+          transform_record_field(name, type_def)
+        else
+          transform_scalar_field(name, type_def)
         end
+      end
+
+      def transform_record_field(name, type_def)
+        {
+          "name" => name,
+          "type" => "RECORD",
+          "mode" => "NULLABLE",
+          "fields" => transform_attributes_to_schema(type_def)
+        }
+      end
+
+      def transform_scalar_field(name, type_def)
+        type, mode = parse_type_and_mode(type_def)
+        {
+          "name" => name,
+          "type" => type.upcase,
+          "mode" => mode
+        }
       end
 
       def parse_type_and_mode(type_str)
