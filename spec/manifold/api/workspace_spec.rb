@@ -179,6 +179,9 @@ RSpec.describe Manifold::API::Workspace do
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - Page
+          dimensions:
+            merge:
+              source: lib/routines/select_pages.sql
         YAML
       end
 

@@ -10,10 +10,15 @@ module Manifold
         super()
         @name = name
         @vectors = []
+        @merge_config = nil
       end
 
       def add_vector(vector_config)
         @vectors << vector_config
+      end
+
+      def set_merge_config(merge_config)
+        @merge_config = merge_config
       end
 
       def as_json
@@ -61,15 +66,13 @@ module Manifold
       end
 
       def routine_config
-        return nil if @vectors.empty?
+        return nil if @vectors.empty? || @merge_config.nil?
 
-        routines = @vectors.filter_map { |vector| build_routine(vector) }
-        routines.empty? ? nil : routines.to_h
+        routines = @vectors.map { |vector| build_routine(vector) }
+        routines.to_h
       end
 
       def build_routine(vector)
-        return nil unless vector["merge"]&.fetch("source", nil)
-
         routine_name = "merge_#{vector["name"].downcase}_dimensions"
         [routine_name, routine_attributes(routine_name, vector)]
       end
@@ -87,7 +90,7 @@ module Manifold
       end
 
       def merge_routine_definition(vector)
-        source_sql = read_source_sql(vector["merge"]["source"])
+        source_sql = read_source_sql(@merge_config["source"])
         <<~SQL
           MERGE #{name}.Dimensions AS TARGET
           USING (
