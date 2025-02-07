@@ -5,6 +5,7 @@ attributes:
   # id: STRING
   # created_at: TIMESTAMP
   # status: STRING
+  # names: STRING:REPEATED
 
 # Optionally, reference a view specifying how to select vector dimensions
 # merge:

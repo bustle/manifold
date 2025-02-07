@@ -32,13 +32,20 @@ module Manifold
       private
 
       def transform_attributes_to_schema(attributes)
-        attributes.map do |name, type|
+        attributes.map do |name, type_str|
+          type, mode = parse_type_and_mode(type_str)
           {
             "name" => name,
             "type" => type.upcase,
-            "mode" => "NULLABLE"
+            "mode" => mode
           }
         end
+      end
+
+      def parse_type_and_mode(type_str)
+        type, mode = type_str.split(":")
+        mode = mode&.upcase || "NULLABLE"
+        [type, mode]
       end
 
       def config_path(vector_name)
