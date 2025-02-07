@@ -46,31 +46,34 @@ RSpec.describe Manifold::CLI do
       allow(mock_project).to receive(:generate)
     end
 
-    context "when called with --tf option" do
-      it "generates terraform configurations" do
-        cli.options = { tf: true, submodule: false }
-        cli.generate
-        expect(mock_project).to have_received(:generate)
-          .with(with_terraform: true, is_submodule: false)
+    context "with default options" do
+      before do
+        cli.options = { submodule: true }
       end
-    end
 
-    context "when called with --tf and --submodule options" do
       it "generates terraform configurations as a submodule" do
-        cli.options = { tf: true, submodule: true }
         cli.generate
         expect(mock_project).to have_received(:generate)
           .with(with_terraform: true, is_submodule: true)
       end
     end
 
-    context "when called without --tf option" do
-      it "does not generate terraform configurations" do
-        cli.options = { tf: false, submodule: false }
+    context "with --no-submodule option" do
+      before do
+        cli.options = { submodule: false }
+      end
+
+      it "generates terraform configurations with provider" do
         cli.generate
         expect(mock_project).to have_received(:generate)
-          .with(with_terraform: false, is_submodule: false)
+          .with(with_terraform: true, is_submodule: false)
       end
+    end
+
+    it "logs the generation" do
+      cli.generate
+      expect(null_logger).to have_received(:info)
+        .with("Generated BigQuery schema and Terraform configurations for all workspaces in the project.")
     end
   end
 

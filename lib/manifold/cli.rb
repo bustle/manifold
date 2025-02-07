@@ -45,16 +45,15 @@ module Manifold
       logger.info "Added workspace '#{name}' with tables and routines directories."
     end
 
-    desc "generate", "Generate BigQuery schema for all workspaces in the project"
-    method_option :tf, type: :boolean, desc: "Generate Terraform configurations"
-    method_option :submodule, type: :boolean, default: false,
+    desc "generate", "Generate BigQuery schema and Terraform configurations for all workspaces in the project"
+    method_option :submodule, type: :boolean, default: true,
                               desc: "Generate Terraform configurations as a submodule (skips provider configuration)"
     def generate
       path = Pathname.pwd
       name = path.basename.to_s
       project = API::Project.new(name, directory: path, logger:)
-      project.generate(with_terraform: options[:tf], is_submodule: options[:submodule])
-      logger.info "Generated BigQuery schema for all workspaces in the project."
+      project.generate(with_terraform: true, is_submodule: options[:submodule])
+      logger.info "Generated BigQuery schema and Terraform configurations for all workspaces in the project."
     end
   end
 end

@@ -56,47 +56,39 @@ cd <project_name>
 manifold add <data_project_name>
 ```
 
-3. **Generate BigQuery Resource Definitions**
+3. **Generate BigQuery Resource Definitions and Terraform Configuration**
 
-After you fill out the manifold.yml file, this command generates the necessary BigQuery schema files based on the specified dimensions and metrics.
+After you fill out the manifold.yml file, this command generates the necessary BigQuery schema files and Terraform configurations based on the specified dimensions and metrics.
 
 ```bash
+# Generate with submodule configuration (default)
 manifold generate
-```
 
-4. **Generate Terraform Configuration (Optional)**
-
-Manifold can optionally generate Terraform configurations for managing your BigQuery resources. To generate both BigQuery schemas and Terraform configurations, use the `--tf` flag:
-
-```bash
-# Generate standard Terraform configuration
-manifold generate --tf
-
-# Generate Terraform configuration as a submodule (skips provider configuration)
-manifold generate --tf --submodule
+# Generate with provider configuration (if needed)
+manifold generate --no-submodule
 ```
 
 This will create:
 
-- A root `main.tf.json` file that sets up the Google Cloud provider and workspace modules (unless using `--submodule`)
+- A root `main.tf.json` file that sets up workspace modules (by default) or includes provider configuration (with --no-submodule)
 - Individual workspace configurations in `workspaces/<workspace_name>/main.tf.json`
 - Dataset and table definitions that reference your generated BigQuery schemas
 
-The generated Terraform configurations use the Google Cloud provider and expect a `project_id` variable to be set. When using the standard configuration (without `--submodule`), you can apply these configurations directly:
-
-```bash
-terraform init
-terraform plan -var="project_id=your-project-id"
-terraform apply -var="project_id=your-project-id"
-```
-
-When using `--submodule`, the generated configuration skips provider setup, allowing you to include the project as a module in a larger Terraform configuration:
+By default, the generated Terraform configurations are designed to be included as a module in your larger Terraform configuration:
 
 ```hcl
 module "my_manifold_project" {
   source = "./path/to/manifold/project"
   project_id = var.project_id
 }
+```
+
+If you need to use the configuration standalone (with `--no-submodule`), you can apply it directly:
+
+```bash
+terraform init
+terraform plan -var="project_id=your-project-id"
+terraform apply -var="project_id=your-project-id"
 ```
 
 ## Manifold Configuration
