@@ -40,7 +40,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
 
       it "includes routine configuration" do
         expect(json["resource"]["google_bigquery_routine"]).to include(
-          "merge_page_dimensions" => expected_routine_config
+          "merge_dimensions" => expected_routine_config
         )
       end
     end
@@ -75,7 +75,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       {
         "dataset_id" => name,
         "project" => "${var.project_id}",
-        "routine_id" => "merge_page_dimensions",
+        "routine_id" => "merge_dimensions",
         "routine_type" => "PROCEDURE",
         "language" => "SQL",
         "definition_body" => expected_merge_routine,
@@ -90,7 +90,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
           #{source_sql}
         ) AS source
         ON source.id = target.id
-        WHEN MATCHED THEN UPDATE SET target.page = source.dimensions
+        WHEN MATCHED THEN UPDATE SET target.dimensions = source.dimensions
         WHEN NOT MATCHED THEN INSERT ROW;
       SQL
     end

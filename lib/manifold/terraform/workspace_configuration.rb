@@ -68,28 +68,24 @@ module Manifold
       def routine_config
         return nil if @vectors.empty? || @merge_config.nil?
 
-        routines = @vectors.map { |vector| build_routine(vector) }
-        routines.to_h
+        {
+          "merge_dimensions" => routine_attributes
+        }
       end
 
-      def build_routine(vector)
-        routine_name = "merge_#{vector["name"].downcase}_dimensions"
-        [routine_name, routine_attributes(routine_name, vector)]
-      end
-
-      def routine_attributes(routine_name, vector)
+      def routine_attributes
         {
           "dataset_id" => name,
           "project" => "${var.project_id}",
-          "routine_id" => routine_name,
+          "routine_id" => "merge_dimensions",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => merge_routine_definition(vector),
+          "definition_body" => merge_routine_definition,
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
 
-      def merge_routine_definition(vector)
+      def merge_routine_definition
         source_sql = read_source_sql(@merge_config["source"])
         <<~SQL
           MERGE #{name}.Dimensions AS TARGET
@@ -97,7 +93,7 @@ module Manifold
             #{source_sql}
           ) AS source
           ON source.id = target.id
-          WHEN MATCHED THEN UPDATE SET target.#{vector["name"].downcase} = source.dimensions
+          WHEN MATCHED THEN UPDATE SET target.dimensions = source.dimensions
           WHEN NOT MATCHED THEN INSERT ROW;
         SQL
       end
