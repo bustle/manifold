@@ -15,7 +15,19 @@ RSpec.describe Manifold::Services::VectorService do
           "url" => "string",
           "created_at" => "timestamp",
           "tags" => "string:repeated",
-          "email" => "string:required"
+          "email" => "string:required",
+          "metadata" => {
+            "source" => "string",
+            "last_modified" => "timestamp",
+            "settings" => {
+              "enabled" => "boolean",
+              "flags" => "string:repeated"
+            }
+          },
+          "key_values" => {
+            "first_key" => "string",
+            "second_key" => "string:required"
+          }
         }
       }
     end
@@ -29,7 +41,34 @@ RSpec.describe Manifold::Services::VectorService do
           { "name" => "url", "type" => "STRING", "mode" => "NULLABLE" },
           { "name" => "created_at", "type" => "TIMESTAMP", "mode" => "NULLABLE" },
           { "name" => "tags", "type" => "STRING", "mode" => "REPEATED" },
-          { "name" => "email", "type" => "STRING", "mode" => "REQUIRED" }
+          { "name" => "email", "type" => "STRING", "mode" => "REQUIRED" },
+          {
+            "name" => "metadata",
+            "type" => "RECORD",
+            "mode" => "NULLABLE",
+            "fields" => [
+              { "name" => "source", "type" => "STRING", "mode" => "NULLABLE" },
+              { "name" => "last_modified", "type" => "TIMESTAMP", "mode" => "NULLABLE" },
+              {
+                "name" => "settings",
+                "type" => "RECORD",
+                "mode" => "NULLABLE",
+                "fields" => [
+                  { "name" => "enabled", "type" => "BOOLEAN", "mode" => "NULLABLE" },
+                  { "name" => "flags", "type" => "STRING", "mode" => "REPEATED" }
+                ]
+              }
+            ]
+          },
+          {
+            "name" => "key_values",
+            "type" => "RECORD",
+            "mode" => "NULLABLE",
+            "fields" => [
+              { "name" => "first_key", "type" => "STRING", "mode" => "NULLABLE" },
+              { "name" => "second_key", "type" => "STRING", "mode" => "REQUIRED" }
+            ]
+          }
         ]
       }
     end
