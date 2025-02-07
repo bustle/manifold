@@ -4,23 +4,29 @@ module Manifold
   module Terraform
     # Represents a Terraform configuration for a Manifold project.
     class ProjectConfiguration < Configuration
-      attr_reader :workspaces, :provider_version
+      attr_reader :workspaces, :provider_version, :skip_provider_config
 
       DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION = "6.18.1"
 
-      def initialize(workspaces, provider_version: DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION)
+      def initialize(workspaces, provider_version: DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION,
+                     skip_provider_config: false)
         super()
         @workspaces = workspaces
         @provider_version = provider_version
+        @skip_provider_config = skip_provider_config
       end
 
       def as_json
-        {
-          "terraform" => terraform_block,
-          "provider" => provider_block,
+        config = {}
+        unless skip_provider_config
+          config["terraform"] = terraform_block
+          config["provider"] = provider_block
+        end
+
+        config.merge!(
           "variable" => variables_block,
           "module" => workspace_modules
-        }
+        )
       end
 
       private

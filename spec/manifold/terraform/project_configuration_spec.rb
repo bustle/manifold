@@ -3,7 +3,7 @@
 RSpec.describe Manifold::Terraform::ProjectConfiguration do
   include FakeFS::SpecHelpers
 
-  subject(:config) { described_class.new(workspaces) }
+  subject(:config) { described_class.new(workspaces, skip_provider_config:) }
 
   let(:workspaces) do
     [
@@ -11,20 +11,35 @@ RSpec.describe Manifold::Terraform::ProjectConfiguration do
       instance_double(Manifold::API::Workspace, name: "workspace_two")
     ]
   end
+  let(:skip_provider_config) { false }
 
   describe "#as_json" do
     subject(:json) { config.as_json }
 
-    it "includes Google provider configuration" do
-      expect(json["terraform"]["required_providers"]["google"]["source"]).to eq("hashicorp/google")
+    context "when skip_provider_config is false" do
+      it "includes Google provider configuration" do
+        expect(json["terraform"]["required_providers"]["google"]["source"]).to eq("hashicorp/google")
+      end
+
+      it "includes provider configuration" do
+        expect(json["provider"]).to include(
+          "google" => {
+            "project" => "${var.project_id}"
+          }
+        )
+      end
     end
 
-    it "includes provider configuration" do
-      expect(json["provider"]).to include(
-        "google" => {
-          "project" => "${var.project_id}"
-        }
-      )
+    context "when skip_provider_config is true" do
+      let(:skip_provider_config) { true }
+
+      it "does not include terraform configuration" do
+        expect(json["terraform"]).to be_nil
+      end
+
+      it "does not include provider configuration" do
+        expect(json["provider"]).to be_nil
+      end
     end
 
     it "includes project_id variable" do
