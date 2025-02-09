@@ -53,13 +53,28 @@ module Manifold
 
       def table_config
         {
-          "dimensions" => {
-            "dataset_id" => name,
-            "project" => "${var.project_id}",
-            "table_id" => "Dimensions",
-            "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
-            "depends_on" => ["google_bigquery_dataset.#{name}"]
-          }
+          "dimensions" => dimensions_table_config,
+          "manifold" => manifold_table_config
+        }
+      end
+
+      def dimensions_table_config
+        {
+          "dataset_id" => name,
+          "project" => "${var.project_id}",
+          "table_id" => "Dimensions",
+          "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
+          "depends_on" => ["google_bigquery_dataset.#{name}"]
+        }
+      end
+
+      def manifold_table_config
+        {
+          "dataset_id" => name,
+          "project" => "${var.project_id}",
+          "table_id" => "Manifold",
+          "schema" => "${file(\"${path.module}/tables/manifold.json\")}",
+          "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
 
