@@ -88,6 +88,35 @@ RSpec.describe Manifold::API::Workspace do
                 - paid
                 - organic
               operator: AND
+            paidOrOrganic:
+              fields:
+                - paid
+                - organic
+              operator: OR
+            notPaid:
+              fields:
+                - paid
+              operator: NOT
+            neitherPaidNorOrganic:
+              fields:
+                - paid
+                - organic
+              operator: NOR
+            notBothPaidAndOrganic:
+              fields:
+                - paid
+                - organic
+              operator: NAND
+            eitherPaidOrOrganic:
+              fields:
+                - paid
+                - organic
+              operator: XOR
+            similarPaidOrganic:
+              fields:
+                - paid
+                - organic
+              operator: XNOR
           metrics:
             countif: tapCount
             sumif:
@@ -163,10 +192,24 @@ RSpec.describe Manifold::API::Workspace do
       include_examples "context metrics", "paid"
       include_examples "context metrics", "organic"
       include_examples "context metrics", "paidOrganic"
+      include_examples "context metrics", "paidOrOrganic"
+      include_examples "context metrics", "notPaid"
+      include_examples "context metrics", "neitherPaidNorOrganic"
+      include_examples "context metrics", "notBothPaidAndOrganic"
+      include_examples "context metrics", "eitherPaidOrOrganic"
+      include_examples "context metrics", "similarPaidOrganic"
 
       it "includes all contexts in the metrics fields" do
-        context_names = schema_fields[:metrics]["fields"].map { |f| f["name"] }
-        expect(context_names).to contain_exactly("paid", "organic", "paidOrganic")
+        expect(schema_fields[:metrics]["fields"].map { |f| f["name"] })
+          .to match_array(expected_context_names)
+      end
+
+      def expected_context_names
+        %w[
+          paid organic paidOrganic paidOrOrganic notPaid
+          neitherPaidNorOrganic notBothPaidAndOrganic
+          eitherPaidOrOrganic similarPaidOrganic
+        ]
       end
 
       it "logs vector schema loading" do
