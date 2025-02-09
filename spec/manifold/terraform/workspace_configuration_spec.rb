@@ -29,6 +29,12 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       )
     end
 
+    it "includes manifold table configuration" do
+      expect(json["resource"]["google_bigquery_table"]).to include(
+        "manifold" => expected_manifold_table
+      )
+    end
+
     context "when vectors have merge configurations" do
       let(:source_sql) { "SELECT id, STRUCT(url, title) AS dimensions FROM pages" }
 
@@ -67,6 +73,16 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         "project" => "${var.project_id}",
         "table_id" => "Dimensions",
         "schema" => "${file(\"${path.module}/tables/dimensions.json\")}",
+        "depends_on" => ["google_bigquery_dataset.#{name}"]
+      }
+    end
+
+    def expected_manifold_table
+      {
+        "dataset_id" => name,
+        "project" => "${var.project_id}",
+        "table_id" => "Manifold",
+        "schema" => "${file(\"${path.module}/tables/manifold.json\")}",
         "depends_on" => ["google_bigquery_dataset.#{name}"]
       }
     end

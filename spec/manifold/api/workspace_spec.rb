@@ -60,6 +60,14 @@ RSpec.describe Manifold::API::Workspace do
 
   describe "#generate" do
     context "when the manifold configuration exists" do
+      let(:manifold_schema) { parse_manifold_schema }
+      let(:schema_fields) do
+        {
+          metrics: manifold_schema.find { |f| f["name"] == "metrics" },
+          basic: manifold_schema.map { |f| f.slice("type", "name", "mode") }
+        }
+      end
+
       before do
         Pathname.pwd.join("vectors").mkpath
         Pathname.pwd.join("vectors", "user.yml").write(<<~YAML)
@@ -72,6 +80,14 @@ RSpec.describe Manifold::API::Workspace do
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - User
+          contexts:
+            paid: IS_PAID(context.location)
+            organic: IS_ORGANIC(context.location)
+          metrics:
+            countif: tapCount
+            sumif:
+              sequenceSum:
+                field: context.sequence
         YAML
 
         workspace.generate
@@ -79,6 +95,10 @@ RSpec.describe Manifold::API::Workspace do
 
       it "generates a dimensions schema file" do
         expect(workspace.tables_directory.join("dimensions.json")).to be_file
+      end
+
+      it "generates a manifold schema file" do
+        expect(workspace.tables_directory.join("manifold.json")).to be_file
       end
 
       it "sets the ID field" do
@@ -93,6 +113,51 @@ RSpec.describe Manifold::API::Workspace do
         )
       end
 
+      it "includes required id field in manifold schema" do
+        expect(schema_fields[:basic]).to include(
+          { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" }
+        )
+      end
+
+      it "includes required timestamp field in manifold schema" do
+        expect(schema_fields[:basic]).to include(
+          { "type" => "TIMESTAMP", "name" => "timestamp", "mode" => "REQUIRED" }
+        )
+      end
+
+      it "includes required dimensions field in manifold schema" do
+        expect(schema_fields[:basic]).to include(
+          { "type" => "RECORD", "name" => "dimensions", "mode" => "REQUIRED" }
+        )
+      end
+
+      it "sets the metrics type to RECORD" do
+        expect(schema_fields[:metrics]["type"]).to eq("RECORD")
+      end
+
+      it "sets the metrics mode to REQUIRED" do
+        expect(schema_fields[:metrics]["mode"]).to eq("REQUIRED")
+      end
+
+      shared_examples "context metrics" do |context_name|
+        let(:context) { schema_fields[:metrics]["fields"].find { |f| f["name"] == context_name } }
+
+        it "includes tapCount metric" do
+          expect(context["fields"]).to include(
+            { "type" => "INTEGER", "name" => "tapCount", "mode" => "NULLABLE" }
+          )
+        end
+
+        it "includes sequenceSum metric" do
+          expect(context["fields"]).to include(
+            { "type" => "INTEGER", "name" => "sequenceSum", "mode" => "NULLABLE" }
+          )
+        end
+      end
+
+      include_examples "context metrics", "paid"
+      include_examples "context metrics", "organic"
+
       it "logs vector schema loading" do
         expect(logger).to have_received(:info).with("Loading vector schema for 'User'.")
       end
@@ -104,6 +169,10 @@ RSpec.describe Manifold::API::Workspace do
 
       def parse_dimensions_schema
         JSON.parse(workspace.tables_directory.join("dimensions.json").read)
+      end
+
+      def parse_manifold_schema
+        JSON.parse(workspace.tables_directory.join("manifold.json").read)
       end
 
       def get_dimension(field)
