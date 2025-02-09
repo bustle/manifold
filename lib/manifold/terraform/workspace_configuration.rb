@@ -131,13 +131,13 @@ module Manifold
       def build_metrics_select(&block)
         <<~SQL
           SELECT
-            dimensions.#{id_field} id,
+            dimensions.id id,
             TIMESTAMP_TRUNC(#{timestamp_field}, #{interval}) timestamp,
             STRUCT(
               #{block.call}
             ) AS metrics
           FROM `#{source_table}`
-          WHERE #{timestamp_field} >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL #{lookback})
+          #{where_clause}
           GROUP BY 1, 2
         SQL
       end
@@ -162,19 +162,17 @@ module Manifold
       end
 
       def source_table
-        @manifold_config&.dig("source", "table")
+        @manifold_config["source"]
       end
 
       def interval
         @manifold_config&.dig("timestamp", "interval") || "DAY"
       end
 
-      def lookback
-        @manifold_config&.dig("source", "lookback") || "90 DAY"
-      end
+      def where_clause
+        return "" unless @manifold_config["filter"]
 
-      def id_field
-        @manifold_config&.dig("source", "id_field") || "id"
+        "WHERE #{@manifold_config["filter"]}"
       end
 
       def timestamp_field
@@ -319,10 +317,13 @@ module Manifold
       def valid_manifold_config?
         return false unless @manifold_config
 
-        @manifold_config&.dig("source", "table") &&
-          @manifold_config&.dig("timestamp", "field") &&
-          @manifold_config&.dig("contexts") &&
-          @manifold_config&.dig("metrics")
+        required_fields_present?
+      end
+
+      def required_fields_present?
+        %w[source timestamp.field contexts metrics].all? do |field|
+          @manifold_config&.dig(*field.split("."))
+        end
       end
     end
   end

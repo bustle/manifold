@@ -14,11 +14,8 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       "metrics" => {
         "countif" => "tapCount"
       },
-      "source" => {
-        "table" => "analytics.events",
-        "id_field" => "user_id",
-        "lookback" => "90 DAY"
-      },
+      "source" => "analytics.events",
+      "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
       "timestamp" => {
         "field" => "created_at",
         "interval" => "DAY"
@@ -109,8 +106,8 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         expect(definition_body).to include("TIMESTAMP_TRUNC(created_at, DAY)")
       end
 
-      it "uses timestamp field in WHERE clause" do
-        expect(definition_body).to include("WHERE created_at >= TIMESTAMP_SUB")
+      it "uses the configured filter" do
+        expect(definition_body).to include("WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)")
       end
 
       it "includes countif metrics" do

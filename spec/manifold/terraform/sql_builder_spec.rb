@@ -6,11 +6,8 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "source" => {
-        "table" => "bdg-wetland.EventStream.CardTaps",
-        "id_field" => "dimensions.cardZoneId",
-        "lookback" => "90 DAY"
-      },
+      "source" => "bdg-wetland.EventStream.CardTaps",
+      "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
       "timestamp" => {
         "field" => "timestamp",
         "interval" => "DAY"
@@ -28,16 +25,12 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
       expect(sql).to include("FROM `bdg-wetland.EventStream.CardTaps`")
     end
 
-    it "uses the configured id field" do
-      expect(sql).to include("dimensions.cardZoneId id")
-    end
-
     it "uses the configured timestamp field and interval" do
       expect(sql).to include("TIMESTAMP_TRUNC(timestamp, DAY) timestamp")
     end
 
-    it "uses the configured lookback" do
-      expect(sql).to include("INTERVAL 90 DAY")
+    it "uses the configured filter" do
+      expect(sql).to include("WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)")
     end
 
     it "includes the metrics struct" do
@@ -47,21 +40,15 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
     context "with default configuration" do
       let(:manifold_config) do
         {
-          "source" => { "table" => "bdg-wetland.EventStream.CardTaps" },
-          "timestamp" => { "field" => "timestamp" }
+          "source" => "bdg-wetland.EventStream.CardTaps",
+          "timestamp" => {
+            "field" => "timestamp"
+          }
         }
-      end
-
-      it "uses default id field" do
-        expect(sql).to include("dimensions.id id")
       end
 
       it "uses default interval" do
         expect(sql).to include("TIMESTAMP_TRUNC(timestamp, DAY)")
-      end
-
-      it "uses default lookback" do
-        expect(sql).to include("INTERVAL 90 DAY")
       end
     end
   end
