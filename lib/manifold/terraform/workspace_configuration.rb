@@ -96,7 +96,7 @@ module Manifold
           MERGE #{@name}.Manifold AS target USING (
             #{build_metrics_cte(&)}
             #{build_final_select}
-          ) AS source#{" "}
+          ) AS source
           ON source.id = target.id AND source.timestamp = target.timestamp
           #{build_merge_actions}
         SQL
@@ -144,8 +144,8 @@ module Manifold
 
       def build_final_select
         <<~SQL
-          SELECT id, timestamp, #{@name}.Dimensions.dimensions, Metrics.metrics#{" "}
-          FROM Metrics#{" "}
+          SELECT id, timestamp, #{@name}.Dimensions.dimensions, Metrics.metrics
+          FROM Metrics
           LEFT JOIN #{@name}.Dimensions USING (id)
         SQL
       end
