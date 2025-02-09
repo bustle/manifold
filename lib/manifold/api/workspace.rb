@@ -4,6 +4,8 @@ module Manifold
   module API
     # Handles terraform configuration generation
     class TerraformGenerator
+      attr_accessor :manifold_config
+
       def initialize(name, vectors, vector_service, manifold_yaml)
         @name = name
         @vectors = vectors
@@ -18,6 +20,7 @@ module Manifold
           config.add_vector(vector_config)
         end
         config.merge_config = @manifold_yaml["dimensions"]&.fetch("merge", nil) if @manifold_yaml["dimensions"]
+        config.manifold_config = @manifold_yaml
         config.write(path)
       end
     end
@@ -145,6 +148,7 @@ module Manifold
 
       def generate_terraform
         terraform_generator = TerraformGenerator.new(name, vectors, @vector_service, manifold_yaml)
+        terraform_generator.manifold_config = manifold_yaml
         terraform_generator.generate(terraform_main_path)
       end
 
