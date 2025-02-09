@@ -15,6 +15,11 @@ timestamp:
 contexts:
   paid: IS_PAID(context.location)
   organic: IS_ORGANIC(context.location)
+  paidOrganic:
+    fields:
+      - paid
+      - organic
+    operator: AND
 
 metrics:
   countif: tapCount

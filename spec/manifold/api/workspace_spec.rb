@@ -83,6 +83,11 @@ RSpec.describe Manifold::API::Workspace do
           contexts:
             paid: IS_PAID(context.location)
             organic: IS_ORGANIC(context.location)
+            paidOrganic:
+              fields:
+                - paid
+                - organic
+              operator: AND
           metrics:
             countif: tapCount
             sumif:
@@ -157,6 +162,12 @@ RSpec.describe Manifold::API::Workspace do
 
       include_examples "context metrics", "paid"
       include_examples "context metrics", "organic"
+      include_examples "context metrics", "paidOrganic"
+
+      it "includes all contexts in the metrics fields" do
+        context_names = schema_fields[:metrics]["fields"].map { |f| f["name"] }
+        expect(context_names).to contain_exactly("paid", "organic", "paidOrganic")
+      end
 
       it "logs vector schema loading" do
         expect(logger).to have_received(:info).with("Loading vector schema for 'User'.")

@@ -33,7 +33,7 @@ module Manifold
       def metrics_fields
         return [] unless @manifold_yaml["contexts"] && @manifold_yaml["metrics"]
 
-        @manifold_yaml["contexts"].map do |context_name, _|
+        @manifold_yaml["contexts"].map do |context_name, _context_config|
           {
             "name" => context_name,
             "type" => "RECORD",
