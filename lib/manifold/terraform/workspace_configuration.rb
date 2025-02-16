@@ -131,7 +131,7 @@ module Manifold
       def build_metrics_select(&block)
         <<~SQL
           SELECT
-            dimensions.id id,
+            id,
             TIMESTAMP_TRUNC(#{timestamp_field}, #{interval}) timestamp,
             STRUCT(
               #{block.call}
@@ -147,7 +147,7 @@ module Manifold
           SELECT
             id,
             timestamp,
-            #{@name}.Dimensions.dimensions,
+            Dimensions.dimensions,
             Metrics.metrics
           FROM Metrics
           LEFT JOIN #{@name}.Dimensions USING (id)
