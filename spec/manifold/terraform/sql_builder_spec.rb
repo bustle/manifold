@@ -6,7 +6,7 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "source" => "bdg-wetland.EventStream.CardTaps",
+      "source" => "`bdg-wetland.EventStream.CardTaps`",
       "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
       "timestamp" => {
         "field" => "timestamp",

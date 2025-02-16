@@ -14,7 +14,7 @@ module Manifold
         context_structs = @manifold_config["contexts"].map do |name, config|
           condition = build_context_condition(name, config)
           metrics = build_context_metrics(condition)
-          "STRUCT(#{metrics}) AS #{name}"
+          "\tSTRUCT(\n\t\t#{metrics}\n\t) AS #{name}"
         end
 
         context_structs.join(",\n")
@@ -26,7 +26,7 @@ module Manifold
         metrics = []
         add_count_metrics(metrics, condition)
         add_sum_metrics(metrics, condition)
-        metrics.join(",\n")
+        metrics.join(",\n\t\t")
       end
 
       def add_count_metrics(metrics, condition)
@@ -131,12 +131,12 @@ module Manifold
       def build_metrics_select(&block)
         <<~SQL
           SELECT
-            dimensions.id id,
+            id,
             TIMESTAMP_TRUNC(#{timestamp_field}, #{interval}) timestamp,
             STRUCT(
               #{block.call}
             ) AS metrics
-          FROM `#{source_table}`
+          FROM #{source_table}
           #{where_clause}
           GROUP BY 1, 2
         SQL
@@ -147,7 +147,7 @@ module Manifold
           SELECT
             id,
             timestamp,
-            #{@name}.Dimensions.dimensions,
+            Dimensions.dimensions,
             Metrics.metrics
           FROM Metrics
           LEFT JOIN #{@name}.Dimensions USING (id)
