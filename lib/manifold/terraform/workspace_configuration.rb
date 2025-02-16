@@ -14,7 +14,7 @@ module Manifold
         context_structs = @manifold_config["contexts"].map do |name, config|
           condition = build_context_condition(name, config)
           metrics = build_context_metrics(condition)
-          "STRUCT(#{metrics}) AS #{name}"
+          "\tSTRUCT(\n\t\t#{metrics}\n\t) AS #{name}"
         end
 
         context_structs.join(",\n")
@@ -26,7 +26,7 @@ module Manifold
         metrics = []
         add_count_metrics(metrics, condition)
         add_sum_metrics(metrics, condition)
-        metrics.join(",\n")
+        metrics.join(",\n\t\t")
       end
 
       def add_count_metrics(metrics, condition)
