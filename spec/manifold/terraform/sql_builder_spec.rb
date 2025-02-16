@@ -56,14 +56,23 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
   describe "#build_dimensions_merge_sql" do
     subject(:sql) { builder.build_dimensions_merge_sql(source_sql) }
 
-    let(:source_sql) { "SELECT id, STRUCT(url, title) AS dimensions FROM pages" }
-
-    it "includes the source SQL" do
-      expect(sql).to include(source_sql)
+    let(:source_sql) do
+      <<~SQL
+        SELECT
+          id,
+          STRUCT(
+            (SELECT AS STRUCT Cards.*) AS card
+          ) AS dimensions
+        FROM Gradius.Cards
+      SQL
     end
 
     it "merges into the dimensions table" do
       expect(sql).to include("MERGE #{name}.Dimensions AS TARGET")
+    end
+
+    it "includes the source SQL" do
+      expect(sql).to include("(SELECT AS STRUCT Cards.*) AS card")
     end
 
     it "updates dimensions on match" do

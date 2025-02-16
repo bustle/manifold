@@ -144,7 +144,11 @@ module Manifold
 
       def build_final_select
         <<~SQL
-          SELECT id, timestamp, #{@name}.Dimensions.dimensions, Metrics.metrics
+          SELECT
+            id,
+            timestamp,
+            #{@name}.Dimensions.dimensions,
+            Metrics.metrics
           FROM Metrics
           LEFT JOIN #{@name}.Dimensions USING (id)
         SQL
@@ -280,7 +284,7 @@ module Manifold
           "routine_id" => "merge_dimensions",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => dimensions_merge_routine,
+          "definition_body" => "${file(\"${path.module}/routines/merge_dimensions.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
@@ -301,7 +305,7 @@ module Manifold
           "routine_id" => "merge_manifold",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => manifold_merge_routine,
+          "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
