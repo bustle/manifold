@@ -144,7 +144,11 @@ module Manifold
 
       def build_final_select
         <<~SQL
-          SELECT id, timestamp, #{@name}.Dimensions.dimensions, Metrics.metrics
+          SELECT
+            id,
+            timestamp,
+            #{@name}.Dimensions.dimensions,
+            Metrics.metrics
           FROM Metrics
           LEFT JOIN #{@name}.Dimensions USING (id)
         SQL
