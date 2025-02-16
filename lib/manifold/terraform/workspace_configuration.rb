@@ -136,7 +136,7 @@ module Manifold
             STRUCT(
               #{block.call}
             ) AS metrics
-          FROM `#{source_table}`
+          FROM #{source_table}
           #{where_clause}
           GROUP BY 1, 2
         SQL
