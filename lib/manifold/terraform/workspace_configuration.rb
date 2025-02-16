@@ -301,7 +301,7 @@ module Manifold
           "routine_id" => "merge_manifold",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => manifold_merge_routine,
+          "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end

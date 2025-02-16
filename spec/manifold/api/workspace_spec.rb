@@ -275,6 +275,15 @@ RSpec.describe Manifold::API::Workspace do
         expect(config["resource"]["google_bigquery_routine"]).not_to be_nil
       end
 
+      it "generates the manifold merge SQL file" do
+        expect(workspace.routines_directory.join("merge_manifold.sql")).to be_file
+      end
+
+      it "includes the merge SQL in the generated file" do
+        sql = workspace.routines_directory.join("merge_manifold.sql").read
+        expect(sql).to include("MERGE #{workspace.name}.Manifold AS target")
+      end
+
       def configure_vector_service
         allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
         configure_vector_schema
@@ -306,12 +315,24 @@ RSpec.describe Manifold::API::Workspace do
 
       def setup_manifold_config
         workspace.add
-        workspace.manifold_path.write(<<~YAML)
+        workspace.manifold_path.write(manifold_yaml_content)
+      end
+
+      def manifold_yaml_content
+        <<~YAML
           vectors:
             - Page
           dimensions:
             merge:
               source: lib/routines/select_pages.sql
+          source: analytics.events
+          timestamp:
+            field: created_at
+            interval: DAY
+          contexts:
+            paid: IS_PAID(context.location)
+          metrics:
+            countif: tapCount
         YAML
       end
 
