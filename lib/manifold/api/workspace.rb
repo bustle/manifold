@@ -33,7 +33,7 @@ module Manifold
       end
 
       def generate_manifold_merge_sql
-        return unless valid_config?
+        return unless valid_manifold_config?
 
         metrics_builder = Terraform::MetricsBuilder.new(@manifold_yaml)
         sql_builder = Terraform::SQLBuilder.new(@name, @manifold_yaml)
@@ -42,14 +42,27 @@ module Manifold
         end
       end
 
+      def generate_dimensions_merge_sql(source_sql)
+        return unless valid_dimensions_config?
+
+        sql_builder = Terraform::SQLBuilder.new(@name, @manifold_yaml)
+        sql_builder.build_dimensions_merge_sql(source_sql)
+      end
+
       private
 
-      def valid_config?
+      def valid_manifold_config?
         return false unless @manifold_yaml
 
         %w[source timestamp.field contexts metrics].all? do |field|
           @manifold_yaml&.dig(*field.split("."))
         end
+      end
+
+      def valid_dimensions_config?
+        return false unless @manifold_yaml
+
+        !@manifold_yaml["dimensions"]&.dig("merge", "source").nil?
       end
     end
 
@@ -142,6 +155,7 @@ module Manifold
         return unless with_terraform
 
         write_manifold_merge_sql
+        write_dimensions_merge_sql
         generate_terraform
         logger.info("Generated Terraform configuration for workspace '#{name}'.")
       end
@@ -180,8 +194,35 @@ module Manifold
         manifold_merge_sql_path.write(sql)
       end
 
+      def write_dimensions_merge_sql
+        return unless dimensions_merge_source_exists?
+
+        sql = generate_dimensions_merge_sql
+        return unless sql
+
+        write_dimensions_merge_sql_file(sql)
+      end
+
+      def dimensions_merge_source_exists?
+        manifold_yaml["dimensions"]&.dig("merge", "source")
+      end
+
+      def generate_dimensions_merge_sql
+        source_sql = File.read(Pathname.pwd.join(manifold_yaml["dimensions"]["merge"]["source"]))
+        SqlGenerator.new(name, manifold_yaml).generate_dimensions_merge_sql(source_sql)
+      end
+
+      def write_dimensions_merge_sql_file(sql)
+        routines_directory.mkpath
+        dimensions_merge_sql_path.write(sql)
+      end
+
       def manifold_merge_sql_path
         routines_directory.join("merge_manifold.sql")
+      end
+
+      def dimensions_merge_sql_path
+        routines_directory.join("merge_dimensions.sql")
       end
 
       private

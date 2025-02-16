@@ -280,7 +280,7 @@ module Manifold
           "routine_id" => "merge_dimensions",
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
-          "definition_body" => dimensions_merge_routine,
+          "definition_body" => "${file(\"${path.module}/routines/merge_dimensions.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end

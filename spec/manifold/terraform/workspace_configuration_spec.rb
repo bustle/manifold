@@ -55,17 +55,48 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
 
     context "when vectors have merge configurations" do
       let(:source_sql) { "SELECT id, STRUCT(url, title) AS dimensions FROM pages" }
+      let(:merge_dimensions_routine) { json["resource"]["google_bigquery_routine"]["merge_dimensions"] }
+      let(:dimensions_routine_details) do
+        {
+          definition_body: merge_dimensions_routine["definition_body"],
+          sql_content: Pathname.pwd.join("workspaces", name, "routines", "merge_dimensions.sql").read
+        }
+      end
 
       before do
         setup_merge_vector_config
         config.add_vector(vector_config)
         config.merge_config = { "source" => "lib/routines/select_pages.sql" }
+
+        workspace = Manifold::API::Workspace.new(name)
+        workspace.add
+        workspace.manifold_path.write(<<~YAML)
+          vectors:
+            - Page
+          dimensions:
+            merge:
+              source: lib/routines/select_pages.sql
+        YAML
+        workspace.write_dimensions_merge_sql
       end
 
       it "includes dimensions merge routine configuration" do
         expect(json["resource"]["google_bigquery_routine"]).to include(
           "merge_dimensions" => expected_routine_config
         )
+      end
+
+      it "references the merge SQL file" do
+        file_path = "${file(\"${path.module}/routines/merge_dimensions.sql\")}"
+        expect(dimensions_routine_details[:definition_body]).to eq(file_path)
+      end
+
+      it "includes dataset dependency" do
+        expect(merge_dimensions_routine["depends_on"]).to eq(["google_bigquery_dataset.#{name}"])
+      end
+
+      it "includes the source SQL in the file" do
+        expect(dimensions_routine_details[:sql_content]).to include(source_sql)
       end
     end
 
@@ -185,7 +216,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       "routine_id" => "merge_dimensions",
       "routine_type" => "PROCEDURE",
       "language" => "SQL",
-      "definition_body" => expected_merge_routine,
+      "definition_body" => "${file(\"${path.module}/routines/merge_dimensions.sql\")}",
       "depends_on" => ["google_bigquery_dataset.#{name}"]
     }
   end
