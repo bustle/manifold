@@ -59,10 +59,10 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
     let(:source_sql) do
       <<~SQL
         SELECT
-        id,
-        STRUCT(
-          (SELECT AS STRUCT Cards.*) AS card
-        ) AS dimensions
+          id,
+          STRUCT(
+            (SELECT AS STRUCT Cards.*) AS card
+          ) AS dimensions
         FROM Gradius.Cards
       SQL
     end
