@@ -173,31 +173,31 @@ RSpec.describe Manifold::API::Workspace do
         expect(schema_fields[:metrics]["mode"]).to eq("REQUIRED")
       end
 
-      shared_examples "context metrics" do |breakout_name|
-        let(:context) { schema_fields[:metrics]["fields"].find { |f| f["name"] == breakout_name } }
+      shared_examples "breakout metrics" do |breakout_name|
+        let(:breakout) { schema_fields[:metrics]["fields"].find { |f| f["name"] == breakout_name } }
 
         it "includes tapCount metric" do
-          expect(context["fields"]).to include(
+          expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "tapCount", "mode" => "NULLABLE" }
           )
         end
 
         it "includes sequenceSum metric" do
-          expect(context["fields"]).to include(
+          expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "sequenceSum", "mode" => "NULLABLE" }
           )
         end
       end
 
-      include_examples "context metrics", "paid"
-      include_examples "context metrics", "organic"
-      include_examples "context metrics", "paidOrganic"
-      include_examples "context metrics", "paidOrOrganic"
-      include_examples "context metrics", "notPaid"
-      include_examples "context metrics", "neitherPaidNorOrganic"
-      include_examples "context metrics", "notBothPaidAndOrganic"
-      include_examples "context metrics", "eitherPaidOrOrganic"
-      include_examples "context metrics", "similarPaidOrganic"
+      include_examples "breakout metrics", "paid"
+      include_examples "breakout metrics", "organic"
+      include_examples "breakout metrics", "paidOrganic"
+      include_examples "breakout metrics", "paidOrOrganic"
+      include_examples "breakout metrics", "notPaid"
+      include_examples "breakout metrics", "neitherPaidNorOrganic"
+      include_examples "breakout metrics", "notBothPaidAndOrganic"
+      include_examples "breakout metrics", "eitherPaidOrOrganic"
+      include_examples "breakout metrics", "similarPaidOrganic"
 
       it "includes all breakouts in the metrics fields" do
         expect(schema_fields[:metrics]["fields"].map { |f| f["name"] })
