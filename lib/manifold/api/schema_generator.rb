@@ -37,7 +37,7 @@ module Manifold
           {
             "name" => group_name,
             "type" => "RECORD",
-            "mode" => "REQUIRED",
+            "mode" => "NULLABLE",
             "fields" => group_metrics_fields(group_config)
           }
         end
