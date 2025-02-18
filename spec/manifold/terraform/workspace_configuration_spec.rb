@@ -219,18 +219,6 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
     }
   end
 
-  def expected_merge_routine
-    <<~SQL
-      MERGE #{name}.Dimensions AS TARGET
-      USING (
-        #{source_sql}
-      ) AS source
-      ON source.id = target.id
-      WHEN MATCHED THEN UPDATE SET target.dimensions = source.dimensions
-      WHEN NOT MATCHED THEN INSERT ROW;
-    SQL
-  end
-
   def setup_merge_vector_config
     Pathname.pwd.join("lib/routines").mkpath
     Pathname.pwd.join("lib/routines/select_pages.sql").write(source_sql)
@@ -247,9 +235,5 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         "source" => "lib/routines/select_pages.sql"
       }
     }
-  end
-
-  def vector_config_without_merge
-    vector_config.tap { |config| config.delete("merge") }
   end
 end

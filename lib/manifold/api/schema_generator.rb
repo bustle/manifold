@@ -4,8 +4,6 @@ module Manifold
   module API
     # Handles schema generation for Manifold tables
     class SchemaGenerator
-      VALID_OPERATORS = %w[AND OR NOT NAND NOR XOR XNOR].freeze
-
       def initialize(dimensions_fields, manifold_yaml)
         @dimensions_fields = dimensions_fields
         @manifold_yaml = manifold_yaml
@@ -85,12 +83,6 @@ module Manifold
             "mode" => "NULLABLE"
           }
         end
-      end
-
-      def validate_operator!(operator)
-        return if VALID_OPERATORS.include?(operator)
-
-        raise ArgumentError, "Invalid operator: #{operator}. Valid operators are: #{VALID_OPERATORS.join(", ")}"
       end
     end
   end

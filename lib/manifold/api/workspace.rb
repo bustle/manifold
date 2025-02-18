@@ -32,16 +32,6 @@ module Manifold
         @manifold_yaml = manifold_yaml
       end
 
-      def generate_manifold_merge_sql
-        return unless valid_manifold_config?
-
-        metrics_builder = Terraform::MetricsBuilder.new(@manifold_yaml)
-        sql_builder = Terraform::SQLBuilder.new(@name, @manifold_yaml)
-        sql_builder.build_manifold_merge_sql(metrics_builder) do
-          metrics_builder.build_metrics_struct
-        end
-      end
-
       def generate_dimensions_merge_sql(source_sql)
         return unless valid_dimensions_config?
 
@@ -50,14 +40,6 @@ module Manifold
       end
 
       private
-
-      def valid_manifold_config?
-        return false unless @manifold_yaml
-
-        %w[source timestamp.field breakouts aggregations].all? do |field|
-          @manifold_yaml&.dig(*field.split("."))
-        end
-      end
 
       def valid_dimensions_config?
         return false unless @manifold_yaml
@@ -219,10 +201,6 @@ module Manifold
       def write_dimensions_merge_sql_file(sql)
         routines_directory.mkpath
         dimensions_merge_sql_path.write(sql)
-      end
-
-      def manifold_merge_sql_path
-        routines_directory.join("merge_manifold.sql")
       end
 
       def dimensions_merge_sql_path

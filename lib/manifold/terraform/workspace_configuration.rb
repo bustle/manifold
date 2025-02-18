@@ -321,13 +321,6 @@ module Manifold
         }
       end
 
-      def dimensions_merge_routine
-        return "" if @vectors.empty? || @dimensions_config.nil?
-
-        source_sql = File.read(Pathname.pwd.join(@dimensions_config["source"]))
-        SQLBuilder.new(name, @manifold_config).build_dimensions_merge_sql(source_sql)
-      end
-
       def manifold_routine_attributes
         {
           "dataset_id" => name,
@@ -338,14 +331,6 @@ module Manifold
           "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
-      end
-
-      def manifold_merge_routine
-        metrics_builder = MetricsBuilder.new(@manifold_config)
-        sql_builder = SQLBuilder.new(name, @manifold_config)
-        sql_builder.build_manifold_merge_sql(metrics_builder) do
-          metrics_builder.build_metrics_struct
-        end
       end
     end
   end
