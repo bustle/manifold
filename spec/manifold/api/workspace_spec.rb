@@ -117,7 +117,7 @@ RSpec.describe Manifold::API::Workspace do
                 - paid
                 - organic
               operator: XNOR
-          metrics:
+          aggregations:
             countif: tapCount
             sumif:
               sequenceSum:
@@ -331,7 +331,7 @@ RSpec.describe Manifold::API::Workspace do
             interval: DAY
           breakouts:
             paid: IS_PAID(context.location)
-          metrics:
+          aggregations:
             countif: tapCount
         YAML
       end

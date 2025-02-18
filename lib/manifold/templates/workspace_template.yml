@@ -21,7 +21,7 @@ breakouts:
       - organic
     operator: AND
 
-metrics:
+aggregations:
   countif: tapCount
   sumif:
     sequenceSum:

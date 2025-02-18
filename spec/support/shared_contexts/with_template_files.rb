@@ -12,7 +12,7 @@ RSpec.shared_context "with template files" do
         interval: DAY
       breakouts:
         paid: IS_PAID(context.location)
-      metrics:
+      aggregations:
         countif: tapCount
     YAML
     vector_template_path.write("attributes:")

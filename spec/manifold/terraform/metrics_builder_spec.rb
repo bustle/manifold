@@ -37,7 +37,7 @@ RSpec.describe Manifold::Terraform::MetricsBuilder do
           "operator" => "XNOR"
         }
       },
-      "metrics" => {
+      "aggregations" => {
         "countif" => "tapCount",
         "sumif" => {
           "sequenceSum" => {
@@ -82,13 +82,13 @@ RSpec.describe Manifold::Terraform::MetricsBuilder do
     end
 
     context "when no breakouts are defined" do
-      let(:manifold_config) { { "metrics" => {} } }
+      let(:manifold_config) { { "breakouts" => {} } }
 
       it { is_expected.to eq("") }
     end
 
-    context "when no metrics are defined" do
-      let(:manifold_config) { { "breakouts" => {} } }
+    context "when no aggregations are defined" do
+      let(:manifold_config) { { "aggregations" => {} } }
 
       it { is_expected.to eq("") }
     end

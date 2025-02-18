@@ -9,7 +9,7 @@ module Manifold
       end
 
       def build_metrics_struct
-        return "" unless @manifold_config&.dig("breakouts") && @manifold_config&.dig("metrics")
+        return "" unless @manifold_config&.dig("breakouts") && @manifold_config&.dig("aggregations")
 
         breakout_structs = @manifold_config["breakouts"].map do |name, config|
           condition = build_breakout_condition(name, config)
@@ -30,13 +30,13 @@ module Manifold
       end
 
       def add_count_metrics(metrics, condition)
-        return unless @manifold_config.dig("metrics", "countif")
+        return unless @manifold_config.dig("aggregations", "countif")
 
-        metrics << "COUNTIF(#{condition}) AS #{@manifold_config["metrics"]["countif"]}"
+        metrics << "COUNTIF(#{condition}) AS #{@manifold_config["aggregations"]["countif"]}"
       end
 
       def add_sum_metrics(metrics, condition)
-        @manifold_config.dig("metrics", "sumif")&.each do |name, config|
+        @manifold_config.dig("aggregations", "sumif")&.each do |name, config|
           metrics << "SUM(IF(#{condition}, #{config["field"]}, 0)) AS #{name}"
         end
       end
@@ -325,7 +325,7 @@ module Manifold
       end
 
       def required_fields_present?
-        %w[source timestamp.field breakouts metrics].all? do |field|
+        %w[source timestamp.field breakouts aggregations].all? do |field|
           @manifold_config&.dig(*field.split("."))
         end
       end
