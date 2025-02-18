@@ -8,7 +8,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "contexts" => {
+      "breakouts" => {
         "paid" => "IS_PAID(context.location)"
       },
       "metrics" => {
@@ -112,8 +112,8 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
           timestamp:
             field: #{manifold_config["timestamp"]["field"]}
             interval: #{manifold_config["timestamp"]["interval"]}
-          contexts:
-            paid: #{manifold_config["contexts"]["paid"]}
+          breakouts:
+            paid: #{manifold_config["breakouts"]["paid"]}
           metrics:
             countif: #{manifold_config["metrics"]["countif"]}
           filter: #{manifold_config["filter"]}

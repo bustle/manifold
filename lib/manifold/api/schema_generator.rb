@@ -33,19 +33,19 @@ module Manifold
       private
 
       def metrics_fields
-        return [] unless @manifold_yaml["contexts"] && @manifold_yaml["metrics"]
+        return [] unless @manifold_yaml["breakouts"] && @manifold_yaml["metrics"]
 
-        @manifold_yaml["contexts"].map do |context_name, _context_config|
+        @manifold_yaml["breakouts"].map do |breakout_name, _breakout_config|
           {
-            "name" => context_name,
+            "name" => breakout_name,
             "type" => "RECORD",
             "mode" => "NULLABLE",
-            "fields" => context_metrics_fields
+            "fields" => breakout_metrics_fields
           }
         end
       end
 
-      def context_metrics_fields
+      def breakout_metrics_fields
         [
           *countif_fields,
           *sumif_fields

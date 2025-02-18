@@ -5,7 +5,7 @@ RSpec.describe Manifold::Terraform::MetricsBuilder do
 
   let(:manifold_config) do
     {
-      "contexts" => {
+      "breakouts" => {
         "paid" => "IS_PAID(context.location)",
         "organic" => "IS_ORGANIC(context.location)",
         "paidOrganic" => {
@@ -53,13 +53,13 @@ RSpec.describe Manifold::Terraform::MetricsBuilder do
 
     context "with valid configuration" do
       it "wraps each context in STRUCT" do
-        manifold_config["contexts"].each_key do |_context|
+        manifold_config["breakouts"].each_key do |_context|
           expect(metrics_struct).to include("STRUCT(")
         end
       end
 
       it "includes each context name" do
-        manifold_config["contexts"].each_key do |context|
+        manifold_config["breakouts"].each_key do |context|
           expect(metrics_struct).to include(") AS #{context}")
         end
       end
@@ -81,14 +81,14 @@ RSpec.describe Manifold::Terraform::MetricsBuilder do
       end
     end
 
-    context "when no contexts are defined" do
+    context "when no breakouts are defined" do
       let(:manifold_config) { { "metrics" => {} } }
 
       it { is_expected.to eq("") }
     end
 
     context "when no metrics are defined" do
-      let(:manifold_config) { { "contexts" => {} } }
+      let(:manifold_config) { { "breakouts" => {} } }
 
       it { is_expected.to eq("") }
     end

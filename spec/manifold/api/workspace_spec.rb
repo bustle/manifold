@@ -80,7 +80,7 @@ RSpec.describe Manifold::API::Workspace do
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - User
-          contexts:
+          breakouts:
             paid: IS_PAID(context.location)
             organic: IS_ORGANIC(context.location)
             paidOrganic:
@@ -173,8 +173,8 @@ RSpec.describe Manifold::API::Workspace do
         expect(schema_fields[:metrics]["mode"]).to eq("REQUIRED")
       end
 
-      shared_examples "context metrics" do |context_name|
-        let(:context) { schema_fields[:metrics]["fields"].find { |f| f["name"] == context_name } }
+      shared_examples "context metrics" do |breakout_name|
+        let(:context) { schema_fields[:metrics]["fields"].find { |f| f["name"] == breakout_name } }
 
         it "includes tapCount metric" do
           expect(context["fields"]).to include(
@@ -199,12 +199,12 @@ RSpec.describe Manifold::API::Workspace do
       include_examples "context metrics", "eitherPaidOrOrganic"
       include_examples "context metrics", "similarPaidOrganic"
 
-      it "includes all contexts in the metrics fields" do
+      it "includes all breakouts in the metrics fields" do
         expect(schema_fields[:metrics]["fields"].map { |f| f["name"] })
-          .to match_array(expected_context_names)
+          .to match_array(expected_breakout_names)
       end
 
-      def expected_context_names
+      def expected_breakout_names
         %w[
           paid organic paidOrganic paidOrOrganic notPaid
           neitherPaidNorOrganic notBothPaidAndOrganic
@@ -329,7 +329,7 @@ RSpec.describe Manifold::API::Workspace do
           timestamp:
             field: created_at
             interval: DAY
-          contexts:
+          breakouts:
             paid: IS_PAID(context.location)
           metrics:
             countif: tapCount

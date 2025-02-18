@@ -10,7 +10,7 @@ RSpec.shared_context "with template files" do
       timestamp:
         field: created_at
         interval: DAY
-      contexts:
+      breakouts:
         paid: IS_PAID(context.location)
       metrics:
         countif: tapCount
