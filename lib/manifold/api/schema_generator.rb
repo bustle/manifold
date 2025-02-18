@@ -33,19 +33,19 @@ module Manifold
       private
 
       def metrics_fields
-        return [] unless @manifold_yaml["contexts"] && @manifold_yaml["metrics"]
+        return [] unless @manifold_yaml["breakouts"] && @manifold_yaml["aggregations"]
 
-        @manifold_yaml["contexts"].map do |context_name, _context_config|
+        @manifold_yaml["breakouts"].map do |breakout_name, _breakout_config|
           {
-            "name" => context_name,
+            "name" => breakout_name,
             "type" => "RECORD",
             "mode" => "NULLABLE",
-            "fields" => context_metrics_fields
+            "fields" => breakout_metrics_fields
           }
         end
       end
 
-      def context_metrics_fields
+      def breakout_metrics_fields
         [
           *countif_fields,
           *sumif_fields
@@ -53,19 +53,19 @@ module Manifold
       end
 
       def countif_fields
-        return [] unless @manifold_yaml.dig("metrics", "countif")
+        return [] unless @manifold_yaml.dig("aggregations", "countif")
 
         [{
-          "name" => @manifold_yaml["metrics"]["countif"],
+          "name" => @manifold_yaml["aggregations"]["countif"],
           "type" => "INTEGER",
           "mode" => "NULLABLE"
         }]
       end
 
       def sumif_fields
-        return [] unless @manifold_yaml.dig("metrics", "sumif")
+        return [] unless @manifold_yaml.dig("aggregations", "sumif")
 
-        @manifold_yaml["metrics"]["sumif"].keys.map do |metric_name|
+        @manifold_yaml["aggregations"]["sumif"].keys.map do |metric_name|
           {
             "name" => metric_name,
             "type" => "INTEGER",

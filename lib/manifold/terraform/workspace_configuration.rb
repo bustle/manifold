@@ -9,20 +9,20 @@ module Manifold
       end
 
       def build_metrics_struct
-        return "" unless @manifold_config&.dig("contexts") && @manifold_config&.dig("metrics")
+        return "" unless @manifold_config&.dig("breakouts") && @manifold_config&.dig("aggregations")
 
-        context_structs = @manifold_config["contexts"].map do |name, config|
-          condition = build_context_condition(name, config)
-          metrics = build_context_metrics(condition)
+        breakout_structs = @manifold_config["breakouts"].map do |name, config|
+          condition = build_breakout_condition(name, config)
+          metrics = build_breakout_metrics(condition)
           "\tSTRUCT(\n\t\t#{metrics}\n\t) AS #{name}"
         end
 
-        context_structs.join(",\n")
+        breakout_structs.join(",\n")
       end
 
       private
 
-      def build_context_metrics(condition)
+      def build_breakout_metrics(condition)
         metrics = []
         add_count_metrics(metrics, condition)
         add_sum_metrics(metrics, condition)
@@ -30,18 +30,18 @@ module Manifold
       end
 
       def add_count_metrics(metrics, condition)
-        return unless @manifold_config.dig("metrics", "countif")
+        return unless @manifold_config.dig("aggregations", "countif")
 
-        metrics << "COUNTIF(#{condition}) AS #{@manifold_config["metrics"]["countif"]}"
+        metrics << "COUNTIF(#{condition}) AS #{@manifold_config["aggregations"]["countif"]}"
       end
 
       def add_sum_metrics(metrics, condition)
-        @manifold_config.dig("metrics", "sumif")&.each do |name, config|
+        @manifold_config.dig("aggregations", "sumif")&.each do |name, config|
           metrics << "SUM(IF(#{condition}, #{config["field"]}, 0)) AS #{name}"
         end
       end
 
-      def build_context_condition(_name, config)
+      def build_breakout_condition(_name, config)
         return config unless config.is_a?(Hash)
 
         operator = config["operator"]
@@ -50,7 +50,7 @@ module Manifold
       end
 
       def build_operator_condition(operator, fields)
-        conditions = fields.map { |f| @manifold_config["contexts"][f] }
+        conditions = fields.map { |f| @manifold_config["breakouts"][f] }
         case operator
         when "AND", "OR" then join_conditions(conditions, operator)
         when "NOT" then negate_condition(conditions.first)
@@ -325,7 +325,7 @@ module Manifold
       end
 
       def required_fields_present?
-        %w[source timestamp.field contexts metrics].all? do |field|
+        %w[source timestamp.field breakouts aggregations].all? do |field|
           @manifold_config&.dig(*field.split("."))
         end
       end

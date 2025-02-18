@@ -12,7 +12,7 @@ timestamp:
   interval: HOUR
   field: timestamp
 
-contexts:
+breakouts:
   paid: IS_PAID(context.location)
   organic: IS_ORGANIC(context.location)
   paidOrganic:
@@ -21,7 +21,7 @@ contexts:
       - organic
     operator: AND
 
-metrics:
+aggregations:
   countif: tapCount
   sumif:
     sequenceSum:

@@ -54,7 +54,7 @@ module Manifold
       def valid_manifold_config?
         return false unless @manifold_yaml
 
-        %w[source timestamp.field contexts metrics].all? do |field|
+        %w[source timestamp.field breakouts aggregations].all? do |field|
           @manifold_yaml&.dig(*field.split("."))
         end
       end

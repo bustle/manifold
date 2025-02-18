@@ -8,10 +8,10 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "contexts" => {
+      "breakouts" => {
         "paid" => "IS_PAID(context.location)"
       },
-      "metrics" => {
+      "aggregations" => {
         "countif" => "tapCount"
       },
       "source" => "analytics.events",
@@ -112,10 +112,10 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
           timestamp:
             field: #{manifold_config["timestamp"]["field"]}
             interval: #{manifold_config["timestamp"]["interval"]}
-          contexts:
-            paid: #{manifold_config["contexts"]["paid"]}
-          metrics:
-            countif: #{manifold_config["metrics"]["countif"]}
+          breakouts:
+            paid: #{manifold_config["breakouts"]["paid"]}
+          aggregations:
+            countif: #{manifold_config["aggregations"]["countif"]}
           filter: #{manifold_config["filter"]}
         YAML
         workspace.write_manifold_merge_sql
