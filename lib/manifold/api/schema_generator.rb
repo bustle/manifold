@@ -87,12 +87,6 @@ module Manifold
         end
       end
 
-      def metric_group?(key)
-        return false unless @manifold_yaml[key].is_a?(Hash)
-
-        @manifold_yaml[key]["breakouts"] && @manifold_yaml[key]["aggregations"]
-      end
-
       def validate_operator!(operator)
         return if VALID_OPERATORS.include?(operator)
 

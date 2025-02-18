@@ -71,12 +71,6 @@ module Manifold
         end
       end
 
-      def metric_group?(key)
-        return false unless @manifold_config[key].is_a?(Hash)
-
-        @manifold_config[key]["breakouts"] && @manifold_config[key]["aggregations"]
-      end
-
       def build_breakout_condition(_name, config, group_config)
         return config unless config.is_a?(Hash)
 
