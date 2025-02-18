@@ -19,7 +19,7 @@ module Manifold
           vector_config = @vector_service.load_vector_config(vector)
           config.add_vector(vector_config)
         end
-        config.merge_config = @manifold_yaml["dimensions"]&.fetch("merge", nil) if @manifold_yaml["dimensions"]
+        config.dimensions_config = @manifold_yaml["dimensions"]&.fetch("merge", nil) if @manifold_yaml["dimensions"]
         config.manifold_config = @manifold_yaml
         config.write(path)
       end
@@ -187,11 +187,15 @@ module Manifold
       end
 
       def write_manifold_merge_sql
-        sql = SqlGenerator.new(name, manifold_yaml).generate_manifold_merge_sql
-        return unless sql
+        return unless manifold_file
 
-        routines_directory.mkpath
-        manifold_merge_sql_path.write(sql)
+        sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
+        metrics_builder = Terraform::MetricsBuilder.new(manifold_yaml)
+        sql = sql_builder.build_manifold_merge_sql(metrics_builder) do
+          metrics_builder.build_metrics_struct
+        end
+
+        routines_directory.join("merge_manifold.sql").write(sql)
       end
 
       def write_dimensions_merge_sql

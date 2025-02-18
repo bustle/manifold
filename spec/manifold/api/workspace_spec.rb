@@ -80,48 +80,53 @@ RSpec.describe Manifold::API::Workspace do
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - User
-          breakouts:
-            paid: IS_PAID(context.location)
-            organic: IS_ORGANIC(context.location)
-            paidOrganic:
-              fields:
-                - paid
-                - organic
-              operator: AND
-            paidOrOrganic:
-              fields:
-                - paid
-                - organic
-              operator: OR
-            notPaid:
-              fields:
-                - paid
-              operator: NOT
-            neitherPaidNorOrganic:
-              fields:
-                - paid
-                - organic
-              operator: NOR
-            notBothPaidAndOrganic:
-              fields:
-                - paid
-                - organic
-              operator: NAND
-            eitherPaidOrOrganic:
-              fields:
-                - paid
-                - organic
-              operator: XOR
-            similarPaidOrganic:
-              fields:
-                - paid
-                - organic
-              operator: XNOR
-          aggregations:
-            countif: tapCount
-            sumif:
-              sequenceSum:
-                field: context.sequence
+          timestamp:
+            field: created_at
+            interval: DAY
+          metrics:
+            taps:
+              breakouts:
+                paid: IS_PAID(context.location)
+                organic: IS_ORGANIC(context.location)
+                paidOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: AND
+                paidOrOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: OR
+                notPaid:
+                  fields:
+                    - paid
+                  operator: NOT
+                neitherPaidNorOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: NOR
+                notBothPaidAndOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: NAND
+                eitherPaidOrOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: XOR
+                similarPaidOrganic:
+                  fields:
+                    - paid
+                    - organic
+                  operator: XNOR
+              aggregations:
+                countif: tapCount
+                sumif:
+                  sequenceSum:
+                    field: context.sequence
         YAML
 
         workspace.generate
@@ -174,7 +179,11 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       shared_examples "breakout metrics" do |breakout_name|
-        let(:breakout) { schema_fields[:metrics]["fields"].find { |f| f["name"] == breakout_name } }
+        let(:breakout) do
+          schema_fields[:metrics]["fields"]
+            .find { |f| f["name"] == "taps" }["fields"]
+            .find { |f| f["name"] == breakout_name }
+        end
 
         it "includes tapCount metric" do
           expect(breakout["fields"]).to include(
@@ -200,7 +209,9 @@ RSpec.describe Manifold::API::Workspace do
       include_examples "breakout metrics", "similarPaidOrganic"
 
       it "includes all breakouts in the metrics fields" do
-        expect(schema_fields[:metrics]["fields"].map { |f| f["name"] })
+        expect(schema_fields[:metrics]["fields"]
+          .find { |f| f["name"] == "taps" }["fields"]
+          .map { |f| f["name"] })
           .to match_array(expected_breakout_names)
       end
 
@@ -329,10 +340,13 @@ RSpec.describe Manifold::API::Workspace do
           timestamp:
             field: created_at
             interval: DAY
-          breakouts:
-            paid: IS_PAID(context.location)
-          aggregations:
-            countif: tapCount
+          metrics:
+            taps:
+              source: analytics.events
+              breakouts:
+                paid: IS_PAID(context.location)
+              aggregations:
+                countif: tapCount
         YAML
       end
 

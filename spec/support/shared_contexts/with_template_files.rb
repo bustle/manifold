@@ -6,14 +6,16 @@ RSpec.shared_context "with template files" do
 
     workspace_template_path.write(<<~YAML)
       vectors:
-      source: analytics.events
       timestamp:
         field: created_at
         interval: DAY
-      breakouts:
-        paid: IS_PAID(context.location)
-      aggregations:
-        countif: tapCount
+      metrics:
+        taps:
+          source: analytics.events
+          breakouts:
+            paid: IS_PAID(context.location)
+          aggregations:
+            countif: tapCount
     YAML
     vector_template_path.write("attributes:")
   end

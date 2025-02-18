@@ -33,45 +33,64 @@ module Manifold
       private
 
       def metrics_fields
-        return [] unless @manifold_yaml["breakouts"] && @manifold_yaml["aggregations"]
+        return [] unless @manifold_yaml["metrics"]
 
-        @manifold_yaml["breakouts"].map do |breakout_name, _breakout_config|
+        @manifold_yaml["metrics"].map do |group_name, group_config|
           {
-            "name" => breakout_name,
+            "name" => group_name,
             "type" => "RECORD",
-            "mode" => "NULLABLE",
-            "fields" => breakout_metrics_fields
+            "mode" => "REQUIRED",
+            "fields" => group_metrics_fields(group_config)
           }
         end
       end
 
-      def breakout_metrics_fields
+      def group_metrics_fields(group_config)
+        return [] unless group_config["breakouts"] && group_config["aggregations"]
+
+        group_config["breakouts"].map do |breakout_name, _breakout_config|
+          {
+            "name" => breakout_name,
+            "type" => "RECORD",
+            "mode" => "NULLABLE",
+            "fields" => breakout_metrics_fields(group_config)
+          }
+        end
+      end
+
+      def breakout_metrics_fields(group_config)
         [
-          *countif_fields,
-          *sumif_fields
+          *countif_fields(group_config),
+          *sumif_fields(group_config)
         ]
       end
 
-      def countif_fields
-        return [] unless @manifold_yaml.dig("aggregations", "countif")
+      def countif_fields(group_config)
+        return [] unless group_config.dig("aggregations", "countif")
 
         [{
-          "name" => @manifold_yaml["aggregations"]["countif"],
+          "name" => group_config["aggregations"]["countif"],
           "type" => "INTEGER",
           "mode" => "NULLABLE"
         }]
       end
 
-      def sumif_fields
-        return [] unless @manifold_yaml.dig("aggregations", "sumif")
+      def sumif_fields(group_config)
+        return [] unless group_config.dig("aggregations", "sumif")
 
-        @manifold_yaml["aggregations"]["sumif"].keys.map do |metric_name|
+        group_config["aggregations"]["sumif"].keys.map do |metric_name|
           {
             "name" => metric_name,
             "type" => "INTEGER",
             "mode" => "NULLABLE"
           }
         end
+      end
+
+      def metric_group?(key)
+        return false unless @manifold_yaml[key].is_a?(Hash)
+
+        @manifold_yaml[key]["breakouts"] && @manifold_yaml[key]["aggregations"]
       end
 
       def validate_operator!(operator)
