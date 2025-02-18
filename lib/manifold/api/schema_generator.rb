@@ -4,8 +4,6 @@ module Manifold
   module API
     # Handles schema generation for Manifold tables
     class SchemaGenerator
-      VALID_OPERATORS = %w[AND OR NOT NAND NOR XOR XNOR].freeze
-
       def initialize(dimensions_fields, manifold_yaml)
         @dimensions_fields = dimensions_fields
         @manifold_yaml = manifold_yaml
@@ -33,51 +31,58 @@ module Manifold
       private
 
       def metrics_fields
-        return [] unless @manifold_yaml["breakouts"] && @manifold_yaml["aggregations"]
+        return [] unless @manifold_yaml["metrics"]
 
-        @manifold_yaml["breakouts"].map do |breakout_name, _breakout_config|
+        @manifold_yaml["metrics"].map do |group_name, group_config|
           {
-            "name" => breakout_name,
+            "name" => group_name,
             "type" => "RECORD",
             "mode" => "NULLABLE",
-            "fields" => breakout_metrics_fields
+            "fields" => group_metrics_fields(group_config)
           }
         end
       end
 
-      def breakout_metrics_fields
+      def group_metrics_fields(group_config)
+        return [] unless group_config["breakouts"] && group_config["aggregations"]
+
+        group_config["breakouts"].map do |breakout_name, _breakout_config|
+          {
+            "name" => breakout_name,
+            "type" => "RECORD",
+            "mode" => "NULLABLE",
+            "fields" => breakout_metrics_fields(group_config)
+          }
+        end
+      end
+
+      def breakout_metrics_fields(group_config)
         [
-          *countif_fields,
-          *sumif_fields
+          *countif_fields(group_config),
+          *sumif_fields(group_config)
         ]
       end
 
-      def countif_fields
-        return [] unless @manifold_yaml.dig("aggregations", "countif")
+      def countif_fields(group_config)
+        return [] unless group_config.dig("aggregations", "countif")
 
         [{
-          "name" => @manifold_yaml["aggregations"]["countif"],
+          "name" => group_config["aggregations"]["countif"],
           "type" => "INTEGER",
           "mode" => "NULLABLE"
         }]
       end
 
-      def sumif_fields
-        return [] unless @manifold_yaml.dig("aggregations", "sumif")
+      def sumif_fields(group_config)
+        return [] unless group_config.dig("aggregations", "sumif")
 
-        @manifold_yaml["aggregations"]["sumif"].keys.map do |metric_name|
+        group_config["aggregations"]["sumif"].keys.map do |metric_name|
           {
             "name" => metric_name,
             "type" => "INTEGER",
             "mode" => "NULLABLE"
           }
         end
-      end
-
-      def validate_operator!(operator)
-        return if VALID_OPERATORS.include?(operator)
-
-        raise ArgumentError, "Invalid operator: #{operator}. Valid operators are: #{VALID_OPERATORS.join(", ")}"
       end
     end
   end

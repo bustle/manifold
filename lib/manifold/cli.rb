@@ -4,7 +4,7 @@ module Manifold
   # CLI provides command line interface functionality
   # for creating and managing umbrella projects for data management.
   class CLI < Thor
-    attr_accessor :logger, :bq_service
+    attr_accessor :logger
 
     def initialize(*args, logger: Logger.new($stdout))
       super(*args)

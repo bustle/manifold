@@ -6,11 +6,21 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "source" => "`bdg-wetland.EventStream.CardTaps`",
-      "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
       "timestamp" => {
         "field" => "timestamp",
         "interval" => "DAY"
+      },
+      "metrics" => {
+        "taps" => {
+          "source" => "`bdg-wetland.EventStream.CardTaps`",
+          "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
+          "breakouts" => {
+            "paid" => "IS_PAID(context.location)"
+          },
+          "aggregations" => {
+            "countif" => "tapCount"
+          }
+        }
       }
     }
   end
@@ -40,9 +50,19 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
     context "with default configuration" do
       let(:manifold_config) do
         {
-          "source" => "bdg-wetland.EventStream.CardTaps",
           "timestamp" => {
             "field" => "timestamp"
+          },
+          "metrics" => {
+            "taps" => {
+              "source" => "bdg-wetland.EventStream.CardTaps",
+              "breakouts" => {
+                "paid" => "IS_PAID(context.location)"
+              },
+              "aggregations" => {
+                "countif" => "tapCount"
+              }
+            }
           }
         }
       end

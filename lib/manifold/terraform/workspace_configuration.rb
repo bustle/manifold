@@ -9,48 +9,76 @@ module Manifold
       end
 
       def build_metrics_struct
-        return "" unless @manifold_config&.dig("breakouts") && @manifold_config&.dig("aggregations")
+        return "" unless @manifold_config["metrics"]
 
-        breakout_structs = @manifold_config["breakouts"].map do |name, config|
-          condition = build_breakout_condition(name, config)
-          metrics = build_breakout_metrics(condition)
-          "\tSTRUCT(\n\t\t#{metrics}\n\t) AS #{name}"
+        metric_groups = @manifold_config["metrics"].map do |group_name, group_config|
+          build_group_struct(group_name, group_config)
         end
 
-        breakout_structs.join(",\n")
+        metric_groups.join(",\n")
       end
 
       private
 
-      def build_breakout_metrics(condition)
+      def build_group_struct(group_name, group_config)
+        return "" unless valid_group_config?(group_config)
+
+        breakout_structs = build_breakout_structs(group_config)
+        return "" if breakout_structs.empty?
+
+        "\tSTRUCT(\n#{breakout_structs.join(",\n")}\n\t) AS #{group_name}"
+      end
+
+      def valid_group_config?(group_config)
+        group_config["breakouts"] &&
+          group_config["aggregations"] &&
+          !group_config["breakouts"].empty? &&
+          !group_config["aggregations"].empty?
+      end
+
+      def build_breakout_structs(group_config)
+        group_config["breakouts"].map do |name, config|
+          build_breakout_struct(name, config, group_config)
+        end.compact
+      end
+
+      def build_breakout_struct(name, config, group_config)
+        condition = build_breakout_condition(name, config, group_config)
+        metrics = build_breakout_metrics(group_config, condition)
+        return if metrics.empty?
+
+        "\t\tSTRUCT(\n\t\t\t#{metrics}\n\t\t) AS #{name}"
+      end
+
+      def build_breakout_metrics(group_config, condition)
         metrics = []
-        add_count_metrics(metrics, condition)
-        add_sum_metrics(metrics, condition)
-        metrics.join(",\n\t\t")
+        add_count_metrics(metrics, group_config, condition)
+        add_sum_metrics(metrics, group_config, condition)
+        metrics.join(",\n\t\t\t")
       end
 
-      def add_count_metrics(metrics, condition)
-        return unless @manifold_config.dig("aggregations", "countif")
+      def add_count_metrics(metrics, group_config, condition)
+        return unless group_config.dig("aggregations", "countif")
 
-        metrics << "COUNTIF(#{condition}) AS #{@manifold_config["aggregations"]["countif"]}"
+        metrics << "COUNTIF(#{condition}) AS #{group_config["aggregations"]["countif"]}"
       end
 
-      def add_sum_metrics(metrics, condition)
-        @manifold_config.dig("aggregations", "sumif")&.each do |name, config|
+      def add_sum_metrics(metrics, group_config, condition)
+        group_config.dig("aggregations", "sumif")&.each do |name, config|
           metrics << "SUM(IF(#{condition}, #{config["field"]}, 0)) AS #{name}"
         end
       end
 
-      def build_breakout_condition(_name, config)
+      def build_breakout_condition(_name, config, group_config)
         return config unless config.is_a?(Hash)
 
         operator = config["operator"]
         fields = config["fields"]
-        build_operator_condition(operator, fields)
+        build_operator_condition(operator, fields, group_config)
       end
 
-      def build_operator_condition(operator, fields)
-        conditions = fields.map { |f| @manifold_config["breakouts"][f] }
+      def build_operator_condition(operator, fields, group_config)
+        conditions = fields.map { |f| group_config["breakouts"][f] }
         case operator
         when "AND", "OR" then join_conditions(conditions, operator)
         when "NOT" then negate_condition(conditions.first)
@@ -117,7 +145,27 @@ module Manifold
       private
 
       def valid_config?
-        source_table && timestamp_field
+        source_table && timestamp_field && @manifold_config["metrics"]
+      end
+
+      def source_table
+        first_group = @manifold_config["metrics"]&.values&.first
+        first_group&.dig("source")
+      end
+
+      def interval
+        @manifold_config&.dig("timestamp", "interval") || "DAY"
+      end
+
+      def where_clause
+        first_group = @manifold_config["metrics"]&.values&.first
+        return "" unless first_group&.dig("filter")
+
+        "WHERE #{first_group["filter"]}"
+      end
+
+      def timestamp_field
+        @manifold_config&.dig("timestamp", "field")
       end
 
       def build_metrics_cte(&)
@@ -164,24 +212,6 @@ module Manifold
             INSERT ROW;
         SQL
       end
-
-      def source_table
-        @manifold_config["source"]
-      end
-
-      def interval
-        @manifold_config&.dig("timestamp", "interval") || "DAY"
-      end
-
-      def where_clause
-        return "" unless @manifold_config["filter"]
-
-        "WHERE #{@manifold_config["filter"]}"
-      end
-
-      def timestamp_field
-        @manifold_config&.dig("timestamp", "field")
-      end
     end
 
     # Handles building table configurations
@@ -221,13 +251,13 @@ module Manifold
     # Represents a Terraform configuration for a Manifold workspace.
     class WorkspaceConfiguration < Configuration
       attr_reader :name
-      attr_writer :merge_config, :manifold_config
+      attr_writer :dimensions_config, :manifold_config
 
       def initialize(name)
         super()
         @name = name
         @vectors = []
-        @merge_config = nil
+        @dimensions_config = nil
       end
 
       def add_vector(vector_config)
@@ -276,7 +306,7 @@ module Manifold
       end
 
       def dimensions_routine_attributes
-        return nil if @vectors.empty? || @merge_config.nil?
+        return nil if @vectors.empty? || @dimensions_config.nil?
 
         {
           "dataset_id" => name,
@@ -289,16 +319,7 @@ module Manifold
         }
       end
 
-      def dimensions_merge_routine
-        return "" if @vectors.empty? || @merge_config.nil?
-
-        source_sql = File.read(Pathname.pwd.join(@merge_config["source"]))
-        SQLBuilder.new(name, @manifold_config).build_dimensions_merge_sql(source_sql)
-      end
-
       def manifold_routine_attributes
-        return nil unless valid_manifold_config?
-
         {
           "dataset_id" => name,
           "project" => "${var.project_id}",
@@ -308,26 +329,6 @@ module Manifold
           "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
-      end
-
-      def manifold_merge_routine
-        metrics_builder = MetricsBuilder.new(@manifold_config)
-        sql_builder = SQLBuilder.new(name, @manifold_config)
-        sql_builder.build_manifold_merge_sql(metrics_builder) do
-          metrics_builder.build_metrics_struct
-        end
-      end
-
-      def valid_manifold_config?
-        return false unless @manifold_config
-
-        required_fields_present?
-      end
-
-      def required_fields_present?
-        %w[source timestamp.field breakouts aggregations].all? do |field|
-          @manifold_config&.dig(*field.split("."))
-        end
       end
     end
   end

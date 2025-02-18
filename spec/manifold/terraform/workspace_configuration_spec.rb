@@ -8,17 +8,21 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   let(:name) { "analytics" }
   let(:manifold_config) do
     {
-      "breakouts" => {
-        "paid" => "IS_PAID(context.location)"
-      },
-      "aggregations" => {
-        "countif" => "tapCount"
-      },
-      "source" => "analytics.events",
-      "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
       "timestamp" => {
         "field" => "created_at",
         "interval" => "DAY"
+      },
+      "metrics" => {
+        "taps" => {
+          "breakouts" => {
+            "paid" => "IS_PAID(context.location)"
+          },
+          "aggregations" => {
+            "countif" => "tapCount"
+          },
+          "source" => "analytics.events",
+          "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)"
+        }
       }
     }
   end
@@ -66,7 +70,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       before do
         setup_merge_vector_config
         config.add_vector(vector_config)
-        config.merge_config = { "source" => "lib/routines/select_pages.sql" }
+        config.dimensions_config = { "source" => "lib/routines/select_pages.sql" }
 
         workspace = Manifold::API::Workspace.new(name)
         workspace.add
@@ -108,15 +112,17 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         workspace.manifold_path.write(<<~YAML)
           vectors:
             - Page
-          source: #{manifold_config["source"]}
           timestamp:
             field: #{manifold_config["timestamp"]["field"]}
             interval: #{manifold_config["timestamp"]["interval"]}
-          breakouts:
-            paid: #{manifold_config["breakouts"]["paid"]}
-          aggregations:
-            countif: #{manifold_config["aggregations"]["countif"]}
-          filter: #{manifold_config["filter"]}
+          metrics:
+            taps:
+              source: #{manifold_config["metrics"]["taps"]["source"]}
+              breakouts:
+                paid: #{manifold_config["metrics"]["taps"]["breakouts"]["paid"]}
+              aggregations:
+                countif: #{manifold_config["metrics"]["taps"]["aggregations"]["countif"]}
+              filter: #{manifold_config["metrics"]["taps"]["filter"]}
         YAML
         workspace.write_manifold_merge_sql
       end
@@ -169,14 +175,6 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         expect(routine_details[:sql_content]).to include("COUNTIF(IS_PAID(context.location)) AS tapCount")
       end
     end
-
-    context "when vectors have no merge configurations" do
-      before { config.add_vector(vector_config_without_merge) }
-
-      it "excludes routine configuration" do
-        expect(json["resource"]["google_bigquery_routine"]).to be_nil
-      end
-    end
   end
 
   private
@@ -221,18 +219,6 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
     }
   end
 
-  def expected_merge_routine
-    <<~SQL
-      MERGE #{name}.Dimensions AS TARGET
-      USING (
-        #{source_sql}
-      ) AS source
-      ON source.id = target.id
-      WHEN MATCHED THEN UPDATE SET target.dimensions = source.dimensions
-      WHEN NOT MATCHED THEN INSERT ROW;
-    SQL
-  end
-
   def setup_merge_vector_config
     Pathname.pwd.join("lib/routines").mkpath
     Pathname.pwd.join("lib/routines/select_pages.sql").write(source_sql)
@@ -249,9 +235,5 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         "source" => "lib/routines/select_pages.sql"
       }
     }
-  end
-
-  def vector_config_without_merge
-    vector_config.tap { |config| config.delete("merge") }
   end
 end
