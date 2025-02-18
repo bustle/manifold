@@ -15,8 +15,6 @@ module Manifold
           build_group_struct(group_name, group_config)
         end
 
-        return "" if metric_groups.empty?
-
         metric_groups.join(",\n")
       end
 
