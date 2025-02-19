@@ -93,10 +93,10 @@ module Manifold
       def build_metrics_select
         <<~SQL
           SELECT
-            id,
-            timestamp,
-            #{build_metrics_struct}
-          FROM #{build_metric_joins}
+              id,
+              timestamp,
+              #{build_metrics_struct}
+            FROM #{build_metric_joins}
         SQL
       end
 
@@ -120,7 +120,7 @@ module Manifold
 
       def build_metrics_struct
         metric_groups = @manifold_config["metrics"].keys
-        metric_groups.map { |group| "#{group.capitalize}Metrics.metrics #{group}" }.join(",\n")
+        metric_groups.map { |group| "#{group.capitalize}Metrics.metrics #{group}" }.join(",\n    ")
       end
 
       def build_metric_joins
@@ -129,7 +129,7 @@ module Manifold
         first = joins.shift
         return first if joins.empty?
 
-        "#{first} #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join(" ")}"
+        "#{first}\n  #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join("\n  ")}"
       end
 
       def build_filter(group_config)
@@ -155,12 +155,12 @@ module Manifold
         @metrics_builder = MetricsSQLBuilder.new(name, manifold_config)
       end
 
-      def build_manifold_merge_sql(metrics_builder, &)
+      def build_manifold_merge_sql
         return "" unless valid_config?
 
         <<~SQL
           MERGE #{@name}.Manifold AS target USING (
-            #{build_source_query(metrics_builder, &)}
+            #{build_source_query}
           ) AS source
           #{build_merge_conditions}
           #{build_merge_actions}
@@ -194,9 +194,8 @@ module Manifold
         @manifold_config&.dig("timestamp", "field")
       end
 
-      def build_source_query(metrics_builder, &)
+      def build_source_query
         <<~SQL
-          #{@metrics_builder.build_metric_ctes(metrics_builder, &)}
           WITH Metrics AS (
             #{@metrics_builder.build_metrics_select}
           )
@@ -213,7 +212,7 @@ module Manifold
             Dimensions.dimensions,
             (SELECT AS STRUCT Metrics.* EXCEPT(id, timestamp)) metrics
           FROM Metrics
-          JOIN #{@name}.Dimensions USING(id)
+          JOIN #{@name}.Dimensions USING (id)
         SQL
       end
 
