@@ -12,7 +12,7 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
       },
       "metrics" => {
         "taps" => {
-          "source" => "`bdg-wetland.EventStream.CardTaps`",
+          "source" => "my_project.render_metrics",
           "filter" => "timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)",
           "breakouts" => {
             "paid" => "IS_PAID(context.location)"
@@ -35,7 +35,7 @@ RSpec.describe Manifold::Terraform::SQLBuilder do
           STRUCT(
             (SELECT AS STRUCT Cards.*) AS card
           ) AS dimensions
-        FROM Gradius.Cards
+        FROM my_project.my_cards
       SQL
     end
 

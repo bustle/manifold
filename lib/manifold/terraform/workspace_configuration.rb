@@ -23,12 +23,12 @@ module Manifold
 
       def build_metrics_struct
         metric_groups = @manifold_config["metrics"].keys
-        metric_groups.map { |group| "#{group.capitalize}Metrics.metrics #{group}" }.join(",\n    ")
+        metric_groups.map { |group| "#{group}.metrics #{group}" }.join(",\n    ")
       end
 
       def build_metric_joins
-        metric_groups = @manifold_config["metrics"].keys
-        joins = metric_groups.map { |group| "#{group.capitalize}Metrics" }
+        metric_groups = @manifold_config["metrics"]
+        joins = metric_groups.map { |group, config| "#{config["source"]} AS #{group}" }
         first = joins.shift
         return first if joins.empty?
 

@@ -5,7 +5,7 @@ RSpec.describe Manifold::API::Project do
 
   subject(:project) { described_class.new(name) }
 
-  let(:name) { "wetland" }
+  let(:name) { "my_project" }
 
   include_context "with template files"
 
