@@ -105,6 +105,67 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
     end
   end
 
+  context "when manifold configuration is present" do
+    subject(:json) { config.as_json }
+
+    before do
+      config.manifold_config = manifold_config
+      workspace = Manifold::API::Workspace.new(name)
+      workspace.add
+      workspace.manifold_path.write(<<~YAML)
+        vectors:
+          - Page
+        timestamp:
+          field: #{manifold_config["timestamp"]["field"]}
+          interval: #{manifold_config["timestamp"]["interval"]}
+        metrics:
+          taps:
+            source: #{manifold_config["metrics"]["taps"]["source"]}
+            breakouts:
+              paid: #{manifold_config["metrics"]["taps"]["breakouts"]["paid"]}
+            aggregations:
+              countif: #{manifold_config["metrics"]["taps"]["aggregations"]["countif"]}
+            filter: #{manifold_config["metrics"]["taps"]["filter"]}
+      YAML
+      workspace.write_manifold_merge_sql
+    end
+
+    let(:merge_manifold_routine) { json["resource"]["google_bigquery_routine"]["merge_manifold"] }
+    let(:routine_details) do
+      {
+        definition_body: merge_manifold_routine["definition_body"],
+        sql_content: Pathname.pwd.join("workspaces", name, "routines", "merge_manifold.sql").read
+      }
+    end
+
+    it "includes merge_manifold routine" do
+      expect(json["resource"]["google_bigquery_routine"]).to include("merge_manifold")
+    end
+
+    it "configures the dataset" do
+      expect(merge_manifold_routine).to include(
+        "dataset_id" => name,
+        "project" => "${var.project_id}"
+      )
+    end
+
+    it "configures the routine type" do
+      expect(merge_manifold_routine).to include(
+        "routine_id" => "merge_manifold",
+        "routine_type" => "PROCEDURE",
+        "language" => "SQL"
+      )
+    end
+
+    it "references the merge SQL file" do
+      expect(routine_details[:definition_body]).to eq("${file(\"${path.module}/routines/merge_manifold.sql\")}")
+    end
+
+    it "includes dataset dependency" do
+      expect(merge_manifold_routine["depends_on"]).to eq(["google_bigquery_dataset.#{name}"])
+    end
+  end
+
   private
 
   def expected_dataset

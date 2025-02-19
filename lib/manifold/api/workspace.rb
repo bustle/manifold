@@ -172,11 +172,7 @@ module Manifold
         return unless manifold_file
 
         sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
-        metrics_builder = Terraform::MetricsBuilder.new(manifold_yaml)
-        sql = sql_builder.build_manifold_merge_sql(metrics_builder) do
-          metrics_builder.build_metrics_struct
-        end
-
+        sql = sql_builder.build_manifold_merge_sql
         routines_directory.join("merge_manifold.sql").write(sql)
       end
 

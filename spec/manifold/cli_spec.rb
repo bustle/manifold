@@ -19,7 +19,7 @@ RSpec.describe Manifold::CLI do
   describe "#init" do
     subject(:cli) { described_class.new(logger: null_logger) }
 
-    let(:project_name) { "wetland" }
+    let(:project_name) { "my_project" }
 
     context "when initializing a new project" do
       before do
