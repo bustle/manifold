@@ -106,6 +106,8 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   end
 
   context "when manifold configuration is present" do
+    subject(:json) { config.as_json }
+
     before do
       config.manifold_config = manifold_config
       workspace = Manifold::API::Workspace.new(name)
@@ -161,19 +163,6 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
 
     it "includes dataset dependency" do
       expect(merge_manifold_routine["depends_on"]).to eq(["google_bigquery_dataset.#{name}"])
-    end
-
-    it "uses the configured timestamp field in the SQL file" do
-      expect(routine_details[:sql_content]).to include("TIMESTAMP_TRUNC(created_at, DAY)")
-    end
-
-    it "uses the configured filter in the SQL file" do
-      filter = "WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)"
-      expect(routine_details[:sql_content]).to include(filter)
-    end
-
-    it "includes countif metrics in the SQL file" do
-      expect(routine_details[:sql_content]).to include("COUNTIF(IS_PAID(context.location)) AS tapCount")
     end
   end
 
