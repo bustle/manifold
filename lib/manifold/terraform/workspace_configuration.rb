@@ -3,91 +3,10 @@
 module Manifold
   module Terraform
     # Handles building metrics SQL for manifold routines
-    class MetricsBuilder
-      def initialize(manifold_config)
-        @manifold_config = manifold_config
-      end
-
-      def build_metrics_struct(group_config = nil)
-        return "" unless group_config || @manifold_config["metrics"]
-
-        if group_config
-          build_group_struct("metrics", group_config)
-        else
-          metric_groups = @manifold_config["metrics"].map do |group_name, config|
-            build_group_struct(group_name, config)
-          end
-          metric_groups.join(",\n")
-        end
-      end
-
-      private
-
-      def build_group_struct(group_name, group_config)
-        return "" unless valid_group_config?(group_config)
-
-        breakout_structs = build_breakout_structs(group_config)
-        return "" if breakout_structs.empty?
-
-        "\tSTRUCT(\n#{breakout_structs.join(",\n")}\n\t) AS #{group_name}"
-      end
-
-      def valid_group_config?(group_config)
-        group_config["breakouts"] &&
-          group_config["aggregations"] &&
-          !group_config["breakouts"].empty? &&
-          !group_config["aggregations"].empty?
-      end
-
-      def build_breakout_structs(group_config)
-        group_config["breakouts"].map do |name, config|
-          build_breakout_struct(name, config, group_config)
-        end.compact
-      end
-
-      def build_breakout_struct(name, config, group_config)
-        condition = build_breakout_condition(name, config)
-        metrics = build_breakout_metrics(group_config, condition)
-        return if metrics.empty?
-
-        "\t\tSTRUCT(\n\t\t\t#{metrics}\n\t\t) AS #{name}"
-      end
-
-      def build_breakout_metrics(group_config, condition)
-        metrics = []
-        add_count_metrics(metrics, group_config, condition)
-        add_sum_metrics(metrics, group_config, condition)
-        metrics.join(",\n\t\t\t")
-      end
-
-      def add_count_metrics(metrics, group_config, condition)
-        return unless group_config.dig("aggregations", "countif")
-
-        metrics << "COUNTIF(#{condition}) AS #{group_config["aggregations"]["countif"]}"
-      end
-
-      def add_sum_metrics(metrics, group_config, condition)
-        group_config.dig("aggregations", "sumif")&.each do |name, config|
-          metrics << "SUM(IF(#{condition}, #{config["field"]}, 0)) AS #{name}"
-        end
-      end
-
-      def build_breakout_condition(_name, config)
-        config
-      end
-    end
-
-    # Handles building metrics SQL for manifold routines
     class MetricsSQLBuilder
       def initialize(name, manifold_config)
         @name = name
         @manifold_config = manifold_config
-      end
-
-      def build_metric_ctes(metrics_builder, &)
-        @manifold_config["metrics"].map do |group_name, group_config|
-          build_metric_cte(group_name, group_config, metrics_builder, &)
-        end.join("\n")
       end
 
       def build_metrics_select
@@ -102,22 +21,6 @@ module Manifold
 
       private
 
-      def build_metric_cte(group_name, group_config, metrics_builder, &)
-        <<~SQL
-          WITH #{group_name.capitalize}Metrics AS (
-            SELECT
-              id,
-              TIMESTAMP_TRUNC(#{timestamp_field}, #{interval}) timestamp,
-              STRUCT(
-                #{block_given? ? yield : metrics_builder.build_metrics_struct(group_config)}
-              ) metrics
-            FROM #{group_config["source"]}
-            #{build_filter(group_config)}
-            GROUP BY 1, 2
-          )
-        SQL
-      end
-
       def build_metrics_struct
         metric_groups = @manifold_config["metrics"].keys
         metric_groups.map { |group| "#{group.capitalize}Metrics.metrics #{group}" }.join(",\n    ")
@@ -130,16 +33,6 @@ module Manifold
         return first if joins.empty?
 
         "#{first}\n  #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join("\n  ")}"
-      end
-
-      def build_filter(group_config)
-        return "" unless group_config["filter"]
-
-        "WHERE #{group_config["filter"]}"
-      end
-
-      def interval
-        @manifold_config&.dig("timestamp", "interval") || "DAY"
       end
 
       def timestamp_field
