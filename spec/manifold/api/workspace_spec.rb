@@ -286,9 +286,9 @@ RSpec.describe Manifold::API::Workspace do
         expect(config["resource"]["google_bigquery_routine"]).not_to be_nil
       end
 
-      # it "generates the manifold merge SQL file" do
-      #   expect(workspace.routines_directory.join("merge_manifold.sql")).to be_file
-      # end
+      it "generates the manifold merge SQL file" do
+        expect(workspace.routines_directory.join("merge_manifold.sql")).to be_file
+      end
 
       it "includes the merge SQL in the generated file" do
         sql = workspace.routines_directory.join("merge_manifold.sql").read

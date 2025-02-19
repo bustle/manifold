@@ -317,8 +317,8 @@ module Manifold
 
       def routine_config
         routines = {
-          "merge_dimensions" => dimensions_routine_attributes
-          # "merge_manifold" => manifold_routine_attributes
+          "merge_dimensions" => dimensions_routine_attributes,
+          "merge_manifold" => manifold_routine_attributes
         }.compact
 
         routines.empty? ? nil : routines
