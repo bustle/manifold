@@ -93,12 +93,6 @@ module Manifold
             #{@metrics_builder.build_metrics_select}
           )
 
-          #{build_final_select}
-        SQL
-      end
-
-      def build_final_select
-        <<~SQL
           SELECT
             id,
             timestamp,
