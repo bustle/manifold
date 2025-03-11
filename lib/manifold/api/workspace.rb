@@ -25,62 +25,6 @@ module Manifold
       end
     end
 
-    # Handles schema file generation for manifold workspaces
-    class SchemaWriter
-      def initialize(name, vectors, vector_service, manifold_yaml, logger)
-        @name = name
-        @vectors = vectors
-        @vector_service = vector_service
-        @manifold_yaml = manifold_yaml
-        @logger = logger
-      end
-
-      def write_schemas(tables_directory)
-        tables_directory.mkpath
-        write_dimensions_schema(tables_directory)
-        write_manifold_schema(tables_directory)
-      end
-
-      private
-
-      def write_dimensions_schema(tables_directory)
-        dimensions_path = tables_directory.join("dimensions.json")
-        dimensions_path.write(dimensions_schema_json.concat("\n"))
-      end
-
-      def write_manifold_schema(tables_directory)
-        manifold_path = tables_directory.join("manifold.json")
-        manifold_path.write(manifold_schema_json.concat("\n"))
-      end
-
-      def schema_generator
-        @schema_generator ||= SchemaGenerator.new(dimensions_fields, @manifold_yaml)
-      end
-
-      def manifold_schema
-        schema_generator.manifold_schema
-      end
-
-      def dimensions_schema
-        schema_generator.dimensions_schema
-      end
-
-      def dimensions_fields
-        @dimensions_fields ||= @vectors.filter_map do |vector|
-          @logger.info("Loading vector schema for '#{vector}'.")
-          @vector_service.load_vector_schema(vector)
-        end
-      end
-
-      def dimensions_schema_json
-        JSON.pretty_generate(dimensions_schema)
-      end
-
-      def manifold_schema_json
-        JSON.pretty_generate(manifold_schema)
-      end
-    end
-
     # Encapsulates a single manifold.
     class Workspace
       attr_reader :name, :template_path, :logger
@@ -108,7 +52,7 @@ module Manifold
       def generate(with_terraform: false)
         return nil unless manifold_exists? && any_vectors?
 
-        generate_schemas
+        write_schemas
         logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
 
         return unless with_terraform
@@ -189,9 +133,9 @@ module Manifold
         @manifold_yaml ||= YAML.safe_load_file(manifold_path)
       end
 
-      def generate_schemas
-        SchemaWriter.new(name, vectors, @vector_service, manifold_yaml, logger)
-                    .write_schemas(tables_directory)
+      def write_schemas
+        SchemaManager.new(name, vectors, @vector_service, manifold_yaml, logger)
+                     .write_schemas(tables_directory)
       end
 
       def any_vectors?
