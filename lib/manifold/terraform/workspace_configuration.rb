@@ -120,7 +120,7 @@ module Manifold
 
         if @manifold_config&.dig("metrics")
           @manifold_config["metrics"].each_key do |group_name|
-            configs["metrics_#{group_name}"] = metrics_table_config(group_name)
+            configs[metrics_table_name(group_name).downcase] = metrics_table_config(group_name)
           end
         end
 
@@ -128,6 +128,10 @@ module Manifold
       end
 
       private
+
+      def metrics_table_name(group_name)
+        "#{group_name.capitalize}Metrics"
+      end
 
       def dimensions_table_config
         build_table_config("Dimensions")
@@ -138,7 +142,8 @@ module Manifold
       end
 
       def metrics_table_config(group_name)
-        build_table_config("Metrics_#{group_name}")
+        titlecased_name = "#{group_name.capitalize}Metrics"
+        build_table_config(titlecased_name)
       end
 
       def build_table_config(table_id)

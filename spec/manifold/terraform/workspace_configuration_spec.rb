@@ -111,7 +111,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
 
       it "includes metrics table configurations" do
         expect(json["resource"]["google_bigquery_table"]).to include(
-          "metrics_taps" => expected_metrics_table("taps")
+          "tapsmetrics" => expected_metrics_table("taps")
         )
       end
     end
@@ -221,11 +221,12 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
   end
 
   def expected_metrics_table(group_name)
+    titlecased_name = "#{group_name.capitalize}Metrics"
     {
       "dataset_id" => name,
       "project" => "${var.project_id}",
-      "table_id" => "Metrics_#{group_name}",
-      "schema" => "${file(\"${path.module}/tables/metrics_#{group_name}.json\")}",
+      "table_id" => titlecased_name,
+      "schema" => "${file(\"${path.module}/tables/#{titlecased_name.downcase}.json\")}",
       "depends_on" => ["google_bigquery_dataset.#{name}"]
     }
   end

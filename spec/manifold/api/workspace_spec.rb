@@ -179,7 +179,7 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       it "generates a metrics table schema file for each metrics group" do
-        expect(workspace.tables_directory.join("metrics_taps.json")).to be_file
+        expect(workspace.tables_directory.join("tapsmetrics.json")).to be_file
       end
 
       it "includes required id field in metrics table schema" do
@@ -290,7 +290,7 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       def parse_metrics_schema(group_name)
-        JSON.parse(workspace.tables_directory.join("metrics_#{group_name}.json").read)
+        JSON.parse(workspace.tables_directory.join("#{"#{group_name.capitalize}Metrics".downcase}.json").read)
       end
     end
 
