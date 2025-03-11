@@ -36,16 +36,15 @@ module Manifold
       private
 
       def valid_config?
-        source_table && timestamp_field && @manifold_config["metrics"]
-      end
-
-      def source_table
-        first_group = @manifold_config["metrics"]&.values&.first
-        first_group&.dig("source")
+        timestamp_field && @manifold_config["metrics"] && !@manifold_config["metrics"].empty?
       end
 
       def timestamp_field
         @manifold_config&.dig("timestamp", "field")
+      end
+
+      def metrics_table_name(group_name)
+        "#{group_name.capitalize}Metrics"
       end
 
       def build_source_query
@@ -97,7 +96,11 @@ module Manifold
 
       def build_metric_joins
         metric_groups = @manifold_config["metrics"]
-        joins = metric_groups.map { |group, config| "#{config["source"]} AS #{group}" }
+        joins = metric_groups.map do |group, config|
+          table = "#{@name}.#{metrics_table_name(group)}"
+          filter = config["filter"] ? " WHERE #{config["filter"]}" : ""
+          "(SELECT * FROM #{table}#{filter}) AS #{group}"
+        end
         first = joins.shift
         return first if joins.empty?
 
