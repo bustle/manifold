@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "schema_manager"
-
 module Manifold
   module API
     # Handles terraform configuration generation
