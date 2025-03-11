@@ -3,6 +3,7 @@
 module Manifold
   module API
     # Handles schema generation and writing for Manifold tables
+    # rubocop:disable Metrics/ClassLength
     class SchemaManager
       def initialize(name, vectors, vector_service, manifold_yaml, logger)
         @name = name
@@ -152,5 +153,6 @@ module Manifold
         end
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

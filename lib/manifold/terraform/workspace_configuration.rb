@@ -107,15 +107,24 @@ module Manifold
 
     # Handles building table configurations
     class TableConfigBuilder
-      def initialize(name)
+      def initialize(name, manifold_config = nil)
         @name = name
+        @manifold_config = manifold_config
       end
 
       def build_table_configs
-        {
+        configs = {
           "dimensions" => dimensions_table_config,
           "manifold" => manifold_table_config
         }
+
+        if @manifold_config&.dig("metrics")
+          @manifold_config["metrics"].each_key do |group_name|
+            configs["metrics_#{group_name}"] = metrics_table_config(group_name)
+          end
+        end
+
+        configs
       end
 
       private
@@ -126,6 +135,10 @@ module Manifold
 
       def manifold_table_config
         build_table_config("Manifold")
+      end
+
+      def metrics_table_config(group_name)
+        build_table_config("Metrics_#{group_name}")
       end
 
       def build_table_config(table_id)
@@ -160,7 +173,7 @@ module Manifold
           "variable" => variables_block,
           "resource" => {
             "google_bigquery_dataset" => dataset_config,
-            "google_bigquery_table" => TableConfigBuilder.new(name).build_table_configs,
+            "google_bigquery_table" => TableConfigBuilder.new(name, @manifold_config).build_table_configs,
             "google_bigquery_routine" => routine_config
           }.compact
         }

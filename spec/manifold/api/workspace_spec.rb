@@ -196,18 +196,29 @@ RSpec.describe Manifold::API::Workspace do
         )
       end
 
-      it "includes required metrics field in metrics table schema" do
+      it "includes metrics field of type RECORD in metrics table schema" do
         metrics_schema = parse_metrics_schema("taps")
         metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
         expect(metrics_field["type"]).to eq("RECORD")
+      end
+
+      it "includes metrics field with REQUIRED mode in metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
         expect(metrics_field["mode"]).to eq("REQUIRED")
       end
 
-      it "includes the correct metrics group in the metrics table schema" do
+      it "includes metrics group with correct name in metrics table schema" do
         metrics_schema = parse_metrics_schema("taps")
         metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
         group_field = metrics_field["fields"].first
         expect(group_field["name"]).to eq("taps")
+      end
+
+      it "includes metrics group with RECORD type in metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
+        group_field = metrics_field["fields"].first
         expect(group_field["type"]).to eq("RECORD")
       end
 
