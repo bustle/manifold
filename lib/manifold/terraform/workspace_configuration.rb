@@ -142,16 +142,17 @@ module Manifold
       end
 
       def metrics_table_config(group_name)
-        titlecased_name = "#{group_name.capitalize}Metrics"
-        build_table_config(titlecased_name)
+        titlecased_name = metrics_table_name(group_name)
+        build_table_config(titlecased_name, "metrics/#{group_name}.json")
       end
 
-      def build_table_config(table_id)
+      def build_table_config(table_id, schema_path = nil)
+        schema_path ||= "#{table_id.downcase}.json"
         {
           "dataset_id" => @name,
           "project" => "${var.project_id}",
           "table_id" => table_id,
-          "schema" => "${file(\"${path.module}/tables/#{table_id.downcase}.json\")}",
+          "schema" => "${file(\"${path.module}/tables/#{schema_path}\")}",
           "depends_on" => ["google_bigquery_dataset.#{@name}"]
         }
       end

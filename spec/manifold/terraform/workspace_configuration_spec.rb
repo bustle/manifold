@@ -226,7 +226,7 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       "dataset_id" => name,
       "project" => "${var.project_id}",
       "table_id" => titlecased_name,
-      "schema" => "${file(\"${path.module}/tables/#{titlecased_name.downcase}.json\")}",
+      "schema" => "${file(\"${path.module}/tables/metrics/#{group_name}.json\")}",
       "depends_on" => ["google_bigquery_dataset.#{name}"]
     }
   end

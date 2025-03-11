@@ -57,10 +57,12 @@ module Manifold
       def write_metrics_schemas(tables_directory)
         return unless @manifold_yaml["metrics"]
 
+        # Create metrics subdirectory
+        metrics_directory = tables_directory.join("metrics")
+        metrics_directory.mkpath
+
         @manifold_yaml["metrics"].each do |group_name, group_config|
-          # Convert group_name to titlecase and append "Metrics"
-          titlecased_name = "#{group_name.capitalize}Metrics"
-          metrics_table_path = tables_directory.join("#{titlecased_name.downcase}.json")
+          metrics_table_path = metrics_directory.join("#{group_name}.json")
           metrics_table_schema = metrics_table_schema(group_name, group_config)
           metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
           @logger.info("Generated metrics table schema for '#{group_name}'.")
