@@ -178,6 +178,39 @@ RSpec.describe Manifold::API::Workspace do
         expect(schema_fields[:metrics]["mode"]).to eq("REQUIRED")
       end
 
+      it "generates a metrics table schema file for each metrics group" do
+        expect(workspace.tables_directory.join("metrics_taps.json")).to be_file
+      end
+
+      it "includes required id field in metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        expect(metrics_schema).to include(
+          { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" }
+        )
+      end
+
+      it "includes required timestamp field in metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        expect(metrics_schema).to include(
+          { "type" => "TIMESTAMP", "name" => "timestamp", "mode" => "REQUIRED" }
+        )
+      end
+
+      it "includes required metrics field in metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
+        expect(metrics_field["type"]).to eq("RECORD")
+        expect(metrics_field["mode"]).to eq("REQUIRED")
+      end
+
+      it "includes the correct metrics group in the metrics table schema" do
+        metrics_schema = parse_metrics_schema("taps")
+        metrics_field = metrics_schema.find { |f| f["name"] == "metrics" }
+        group_field = metrics_field["fields"].first
+        expect(group_field["name"]).to eq("taps")
+        expect(group_field["type"]).to eq("RECORD")
+      end
+
       shared_examples "breakout metrics" do |breakout_name|
         let(:breakout) do
           schema_fields[:metrics]["fields"]
@@ -243,6 +276,10 @@ RSpec.describe Manifold::API::Workspace do
       def get_dimension(field)
         dimensions = parse_dimensions_schema.find { |f| f["name"] == "dimensions" }
         dimensions["fields"].find { |f| f["name"] == field }
+      end
+
+      def parse_metrics_schema(group_name)
+        JSON.parse(workspace.tables_directory.join("metrics_#{group_name}.json").read)
       end
     end
 

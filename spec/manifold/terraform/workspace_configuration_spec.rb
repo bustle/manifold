@@ -103,6 +103,18 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         expect(dimensions_routine_details[:sql_content]).to include(source_sql)
       end
     end
+
+    context "when metrics configuration is present" do
+      before do
+        config.manifold_config = manifold_config
+      end
+
+      it "includes metrics table configurations" do
+        expect(json["resource"]["google_bigquery_table"]).to include(
+          "metrics_taps" => expected_metrics_table("taps")
+        )
+      end
+    end
   end
 
   context "when manifold configuration is present" do
@@ -204,6 +216,16 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
       "routine_type" => "PROCEDURE",
       "language" => "SQL",
       "definition_body" => "${file(\"${path.module}/routines/merge_dimensions.sql\")}",
+      "depends_on" => ["google_bigquery_dataset.#{name}"]
+    }
+  end
+
+  def expected_metrics_table(group_name)
+    {
+      "dataset_id" => name,
+      "project" => "${var.project_id}",
+      "table_id" => "Metrics_#{group_name}",
+      "schema" => "${file(\"${path.module}/tables/metrics_#{group_name}.json\")}",
       "depends_on" => ["google_bigquery_dataset.#{name}"]
     }
   end

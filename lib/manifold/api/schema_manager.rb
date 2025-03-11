@@ -17,6 +17,7 @@ module Manifold
         tables_directory.mkpath
         write_dimensions_schema(tables_directory)
         write_manifold_schema(tables_directory)
+        write_metrics_schemas(tables_directory)
       end
 
       # Returns the dimensions schema structure
@@ -50,6 +51,35 @@ module Manifold
       def write_manifold_schema(tables_directory)
         manifold_path = tables_directory.join("manifold.json")
         manifold_path.write(manifold_schema_json.concat("\n"))
+      end
+
+      def write_metrics_schemas(tables_directory)
+        return unless @manifold_yaml["metrics"]
+
+        @manifold_yaml["metrics"].each do |group_name, group_config|
+          metrics_table_path = tables_directory.join("metrics_#{group_name}.json")
+          metrics_table_schema = metrics_table_schema(group_name, group_config)
+          metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
+          @logger.info("Generated metrics table schema for '#{group_name}'.")
+        end
+      end
+
+      def metrics_table_schema(group_name, group_config)
+        [
+          { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" },
+          { "type" => "TIMESTAMP", "name" => "timestamp", "mode" => "REQUIRED" },
+          { "type" => "RECORD", "name" => "metrics", "mode" => "REQUIRED",
+            "fields" => [metrics_group_field(group_name, group_config)] }
+        ]
+      end
+
+      def metrics_group_field(group_name, group_config)
+        {
+          "name" => group_name,
+          "type" => "RECORD",
+          "mode" => "NULLABLE",
+          "fields" => group_metrics_fields(group_config)
+        }
       end
 
       def dimensions_fields
