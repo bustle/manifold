@@ -2,50 +2,11 @@
 
 module Manifold
   module Terraform
-    # Handles building metrics SQL for manifold routines
-    class MetricsSQLBuilder
-      def initialize(name, manifold_config)
-        @name = name
-        @manifold_config = manifold_config
-      end
-
-      def build_metrics_select
-        <<~SQL
-          SELECT
-              id,
-              timestamp,
-              #{build_metrics_struct}
-            FROM #{build_metric_joins}
-        SQL
-      end
-
-      private
-
-      def build_metrics_struct
-        metric_groups = @manifold_config["metrics"].keys
-        metric_groups.map { |group| "#{group}.metrics #{group}" }.join(",\n    ")
-      end
-
-      def build_metric_joins
-        metric_groups = @manifold_config["metrics"]
-        joins = metric_groups.map { |group, config| "#{config["source"]} AS #{group}" }
-        first = joins.shift
-        return first if joins.empty?
-
-        "#{first}\n  #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join("\n  ")}"
-      end
-
-      def timestamp_field
-        @manifold_config&.dig("timestamp", "field")
-      end
-    end
-
     # Handles building SQL for manifold routines
     class SQLBuilder
       def initialize(name, manifold_config)
         @name = name
         @manifold_config = manifold_config
-        @metrics_builder = MetricsSQLBuilder.new(name, manifold_config)
       end
 
       def build_manifold_merge_sql
@@ -90,7 +51,7 @@ module Manifold
       def build_source_query
         <<~SQL
           WITH Metrics AS (
-            #{@metrics_builder.build_metrics_select}
+            #{build_metrics_select}
           )
 
           SELECT
@@ -116,6 +77,31 @@ module Manifold
           WHEN NOT MATCHED THEN
             INSERT ROW;
         SQL
+      end
+
+      # Metrics SQL building methods
+      def build_metrics_select
+        <<~SQL
+          SELECT
+              id,
+              timestamp,
+              #{build_metrics_struct}
+            FROM #{build_metric_joins}
+        SQL
+      end
+
+      def build_metrics_struct
+        metric_groups = @manifold_config["metrics"].keys
+        metric_groups.map { |group| "#{group}.metrics #{group}" }.join(",\n    ")
+      end
+
+      def build_metric_joins
+        metric_groups = @manifold_config["metrics"]
+        joins = metric_groups.map { |group, config| "#{config["source"]} AS #{group}" }
+        first = joins.shift
+        return first if joins.empty?
+
+        "#{first}\n  #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join("\n  ")}"
       end
     end
 

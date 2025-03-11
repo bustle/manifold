@@ -6,7 +6,7 @@ module Manifold
     class ProjectConfiguration < Configuration
       attr_reader :workspaces, :provider_version, :skip_provider_config
 
-      DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION = "6.18.1"
+      DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION = "6.24.0"
 
       def initialize(workspaces, provider_version: DEFAULT_TERRAFORM_GOOGLE_PROVIDER_VERSION,
                      skip_provider_config: false)
