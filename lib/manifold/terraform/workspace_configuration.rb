@@ -36,16 +36,15 @@ module Manifold
       private
 
       def valid_config?
-        source_table && timestamp_field && @manifold_config["metrics"]
-      end
-
-      def source_table
-        first_group = @manifold_config["metrics"]&.values&.first
-        first_group&.dig("source")
+        timestamp_field && @manifold_config["metrics"] && !@manifold_config["metrics"].empty?
       end
 
       def timestamp_field
         @manifold_config&.dig("timestamp", "field")
+      end
+
+      def metrics_table_name(group_name)
+        "#{group_name.capitalize}Metrics"
       end
 
       def build_source_query
@@ -97,7 +96,11 @@ module Manifold
 
       def build_metric_joins
         metric_groups = @manifold_config["metrics"]
-        joins = metric_groups.map { |group, config| "#{config["source"]} AS #{group}" }
+        joins = metric_groups.map do |group, config|
+          table = "#{@name}.#{metrics_table_name(group)}"
+          filter = config["filter"] ? " WHERE #{config["filter"]}" : ""
+          "(SELECT * FROM #{table}#{filter}) AS #{group}"
+        end
         first = joins.shift
         return first if joins.empty?
 
@@ -107,18 +110,31 @@ module Manifold
 
     # Handles building table configurations
     class TableConfigBuilder
-      def initialize(name)
+      def initialize(name, manifold_config = nil)
         @name = name
+        @manifold_config = manifold_config
       end
 
       def build_table_configs
-        {
+        configs = {
           "dimensions" => dimensions_table_config,
           "manifold" => manifold_table_config
         }
+
+        if @manifold_config&.dig("metrics")
+          @manifold_config["metrics"].each_key do |group_name|
+            configs[metrics_table_name(group_name).downcase] = metrics_table_config(group_name)
+          end
+        end
+
+        configs
       end
 
       private
+
+      def metrics_table_name(group_name)
+        "#{group_name.capitalize}Metrics"
+      end
 
       def dimensions_table_config
         build_table_config("Dimensions")
@@ -128,12 +144,18 @@ module Manifold
         build_table_config("Manifold")
       end
 
-      def build_table_config(table_id)
+      def metrics_table_config(group_name)
+        titlecased_name = metrics_table_name(group_name)
+        build_table_config(titlecased_name, "metrics/#{group_name}.json")
+      end
+
+      def build_table_config(table_id, schema_path = nil)
+        schema_path ||= "#{table_id.downcase}.json"
         {
           "dataset_id" => @name,
           "project" => "${var.project_id}",
           "table_id" => table_id,
-          "schema" => "${file(\"${path.module}/tables/#{table_id.downcase}.json\")}",
+          "schema" => "${file(\"${path.module}/tables/#{schema_path}\")}",
           "depends_on" => ["google_bigquery_dataset.#{@name}"]
         }
       end
@@ -160,7 +182,7 @@ module Manifold
           "variable" => variables_block,
           "resource" => {
             "google_bigquery_dataset" => dataset_config,
-            "google_bigquery_table" => TableConfigBuilder.new(name).build_table_configs,
+            "google_bigquery_table" => TableConfigBuilder.new(name, @manifold_config).build_table_configs,
             "google_bigquery_routine" => routine_config
           }.compact
         }
