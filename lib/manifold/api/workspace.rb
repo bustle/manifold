@@ -154,9 +154,11 @@ module Manifold
       end
 
       def write_dimensions_merge_sql
-        return unless dimensions_merge_source_exists?
+        return unless valid_dimensions_config?
 
-        sql = generate_dimensions_merge_sql
+        source_sql = File.read(Pathname.pwd.join(manifold_yaml["dimensions"]["merge"]["source"]))
+        sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
+        sql = sql_builder.build_dimensions_merge_sql(source_sql)
         return unless sql
 
         write_dimensions_merge_sql_file(sql)
@@ -164,14 +166,6 @@ module Manifold
 
       def dimensions_merge_source_exists?
         manifold_yaml["dimensions"]&.dig("merge", "source")
-      end
-
-      def generate_dimensions_merge_sql
-        return unless valid_dimensions_config?
-
-        source_sql = File.read(Pathname.pwd.join(manifold_yaml["dimensions"]["merge"]["source"]))
-        sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
-        sql_builder.build_dimensions_merge_sql(source_sql)
       end
 
       def valid_dimensions_config?
