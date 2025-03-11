@@ -25,29 +25,6 @@ module Manifold
       end
     end
 
-    # Handles SQL generation for manifold workspaces
-    class SqlGenerator
-      def initialize(name, manifold_yaml)
-        @name = name
-        @manifold_yaml = manifold_yaml
-      end
-
-      def generate_dimensions_merge_sql(source_sql)
-        return unless valid_dimensions_config?
-
-        sql_builder = Terraform::SQLBuilder.new(@name, @manifold_yaml)
-        sql_builder.build_dimensions_merge_sql(source_sql)
-      end
-
-      private
-
-      def valid_dimensions_config?
-        return false unless @manifold_yaml
-
-        !@manifold_yaml["dimensions"]&.dig("merge", "source").nil?
-      end
-    end
-
     # Handles schema file generation for manifold workspaces
     class SchemaWriter
       def initialize(name, vectors, vector_service, manifold_yaml, logger)
@@ -190,8 +167,17 @@ module Manifold
       end
 
       def generate_dimensions_merge_sql
+        return unless valid_dimensions_config?
+
         source_sql = File.read(Pathname.pwd.join(manifold_yaml["dimensions"]["merge"]["source"]))
-        SqlGenerator.new(name, manifold_yaml).generate_dimensions_merge_sql(source_sql)
+        sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
+        sql_builder.build_dimensions_merge_sql(source_sql)
+      end
+
+      def valid_dimensions_config?
+        return false unless manifold_yaml
+
+        !manifold_yaml["dimensions"]&.dig("merge", "source").nil?
       end
 
       def write_dimensions_merge_sql_file(sql)
