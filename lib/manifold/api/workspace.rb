@@ -164,10 +164,6 @@ module Manifold
         write_dimensions_merge_sql_file(sql)
       end
 
-      def dimensions_merge_source_exists?
-        manifold_yaml["dimensions"]&.dig("merge", "source")
-      end
-
       def valid_dimensions_config?
         return false unless manifold_yaml
 
