@@ -52,7 +52,7 @@ module Manifold
       def generate(with_terraform: false)
         return nil unless manifold_exists? && any_vectors?
 
-        generate_schemas
+        write_schemas
         logger.info("Generated BigQuery dimensions table schema for workspace '#{name}'.")
 
         return unless with_terraform
@@ -133,7 +133,7 @@ module Manifold
         @manifold_yaml ||= YAML.safe_load_file(manifold_path)
       end
 
-      def generate_schemas
+      def write_schemas
         SchemaManager.new(name, vectors, @vector_service, manifold_yaml, logger)
                      .write_schemas(tables_directory)
       end
