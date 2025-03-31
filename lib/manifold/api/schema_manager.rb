@@ -162,19 +162,19 @@ module Manifold
         return [] unless group_config["breakouts"]
         return [] if group_config["breakouts"].keys.size <= 1
 
-        generate_all_breakout_combinations(group_config)
+        generate_intersections(group_config)
       end
 
-      def generate_all_breakout_combinations(group_config)
-        all_intersection_fields = []
+      def generate_intersections(group_config)
+        intersections = []
         breakout_groups = group_config["breakouts"].keys
 
         # Generate combinations of different sizes (2 to n breakout groups)
         (2..breakout_groups.size).each do |combination_size|
-          add_combinations_of_size(combination_size, breakout_groups, group_config, all_intersection_fields)
+          add_combinations_of_size(combination_size, breakout_groups, group_config, intersections)
         end
 
-        all_intersection_fields
+        intersections
       end
 
       def add_combinations_of_size(size, breakout_groups, group_config, all_fields)
@@ -206,13 +206,9 @@ module Manifold
       end
 
       def extend_combinations_with_remaining_sets(initial_combinations, remaining_sets)
-        combinations = initial_combinations
-
-        remaining_sets.each do |conditions|
-          combinations = extend_combinations_with_conditions(combinations, conditions)
+        remaining_sets.reduce(initial_combinations) do |combinations, conditions|
+          extend_combinations_with_conditions(combinations, conditions)
         end
-
-        combinations
       end
 
       def extend_combinations_with_conditions(existing_combinations, conditions)
