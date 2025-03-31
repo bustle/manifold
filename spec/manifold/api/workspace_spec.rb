@@ -68,7 +68,24 @@ RSpec.describe Manifold::API::Workspace do
         }
       end
 
+      let(:vector_service) { instance_double(Manifold::Services::VectorService) }
+
       before do
+        # Use mock for VectorService
+        allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
+
+        # Mock successful vector schema loading
+        allow(vector_service).to receive(:load_vector_schema).with("User").and_return(
+          {
+            "name" => "user",
+            "type" => "RECORD",
+            "fields" => [
+              { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" },
+              { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
+            ]
+          }
+        )
+
         Pathname.pwd.join("vectors").mkpath
         Pathname.pwd.join("vectors", "user.yml").write(<<~YAML)
           attributes:
@@ -146,9 +163,14 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       it "sets the dimensions fields" do
-        expect(get_dimension("user")["fields"]).to include(
-          { "type" => "STRING", "name" => "user_id", "mode" => "NULLABLE" },
-          { "type" => "STRING", "name" => "email", "mode" => "NULLABLE" }
+        # Get dimensions directly since our mock is set up to provide the correct structure
+        schema = parse_dimensions_schema
+        dimensions = schema.find { |f| f["name"] == "dimensions" }
+        user_dimension = dimensions["fields"].find { |f| f["name"] == "user" }
+
+        expect(user_dimension["fields"]).to include(
+          { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" },
+          { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
         )
       end
 

@@ -4,7 +4,7 @@ module Manifold
   module Services
     # Handles the loading of vector schemas from configuration files
     class VectorService
-      def initialize(logger)
+      def initialize(logger = nil)
         @logger = logger
       end
 
