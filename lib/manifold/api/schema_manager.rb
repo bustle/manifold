@@ -128,46 +128,10 @@ module Manifold
       def group_metrics_fields(group_config)
         return [] unless group_config["aggregations"]
 
-        if legacy_format?(group_config)
-          handle_legacy_format(group_config)
-        else
-          handle_modern_format(group_config)
-        end
-      end
+        # Generate condition fields
+        condition_fields = generate_condition_fields(get_conditions_list(group_config), group_config)
 
-      def legacy_format?(group_config)
-        has_complex_operators = group_config["breakouts"]&.values&.any? do |v|
-          v.is_a?(Hash) && v["operator"]
-        end
-
-        !group_config["breakouts"] || has_complex_operators
-      end
-
-      def handle_legacy_format(group_config)
-        if group_config["breakouts"]&.values&.any? { |v| v.is_a?(Hash) && v["operator"] }
-          handle_legacy_breakouts(group_config)
-        else
-          handle_no_breakouts(group_config)
-        end
-      end
-
-      def handle_no_breakouts(group_config)
-        # Support for older format where breakouts are direct fields
-        direct_field_keys = group_config.keys - %w[aggregations source filter]
-
-        direct_field_keys.map do |condition_name|
-          create_metric_field(condition_name, group_config)
-        end
-      end
-
-      def handle_modern_format(group_config)
-        # Determine conditions list
-        conditions = get_conditions_list(group_config)
-
-        # Generate individual condition fields
-        condition_fields = generate_condition_fields(conditions, group_config)
-
-        # Generate intersection fields across different breakout groups
+        # Generate intersection fields between breakout groups
         intersection_fields = generate_breakout_intersection_fields(group_config)
 
         condition_fields + intersection_fields
@@ -181,13 +145,6 @@ module Manifold
         end
       end
 
-      def handle_legacy_breakouts(group_config)
-        # For legacy format, each key directly in the metrics group is a breakout
-        group_config["breakouts"].keys.map do |breakout_name|
-          create_metric_field(breakout_name, group_config)
-        end
-      end
-
       def create_metric_field(field_name, group_config)
         {
           "name" => field_name,
@@ -198,27 +155,16 @@ module Manifold
       end
 
       def extract_conditions_from_breakouts(breakouts)
+        return [] unless breakouts.is_a?(Hash)
+
         conditions = []
-
-        breakouts.each do |breakout_name, breakout_values|
-          conditions.concat(get_conditions_for_breakout(breakout_name, breakout_values))
+        breakouts.each_value do |breakout_values|
+          conditions.concat(breakout_values) if breakout_values.is_a?(Array)
         end
-
         conditions.uniq
       end
 
-      def get_conditions_for_breakout(breakout_name, breakout_values)
-        if breakout_values.is_a?(Array)
-          breakout_values
-        elsif breakout_values.is_a?(Hash) && breakout_values["operator"]
-          [] # Skip complex operators in the new format
-        else
-          [breakout_name] # For string format, use the breakout name as the condition
-        end
-      end
-
       def generate_condition_fields(conditions, group_config)
-        # Add a field for each condition
         conditions.map do |condition_name|
           create_metric_field(condition_name, group_config)
         end
@@ -226,17 +172,9 @@ module Manifold
 
       def generate_breakout_intersection_fields(group_config)
         return [] unless group_config["breakouts"]
-        return [] if should_skip_intersections?(group_config)
+        return [] if group_config["breakouts"].keys.size <= 1
 
         generate_intersections(group_config)
-      end
-
-      def should_skip_intersections?(group_config)
-        breakout_groups = group_config["breakouts"].keys
-
-        # Skip if there's only one breakout group or if using legacy format
-        breakout_groups.size <= 1 ||
-          group_config["breakouts"].values.any? { |v| v.is_a?(Hash) && v["operator"] }
       end
 
       def generate_intersections(group_config)
@@ -255,8 +193,8 @@ module Manifold
       def generate_intersection_fields_for_pair(group_config, breakout_pair)
         first_group, second_group = breakout_pair
 
-        first_group_conditions = get_breakout_conditions(group_config["breakouts"], first_group)
-        second_group_conditions = get_breakout_conditions(group_config["breakouts"], second_group)
+        first_group_conditions = group_config["breakouts"][first_group]
+        second_group_conditions = group_config["breakouts"][second_group]
 
         generate_intersection_combinations(
           first_group_conditions,
@@ -268,6 +206,7 @@ module Manifold
       def generate_intersection_combinations(first_conditions, second_conditions, group_config)
         fields = []
 
+        # Process the intersection combinations
         first_conditions.each do |first_condition|
           second_conditions.each do |second_condition|
             intersection_name = "#{first_condition}#{second_condition.capitalize}"
@@ -276,21 +215,6 @@ module Manifold
         end
 
         fields
-      end
-
-      def get_breakout_conditions(breakouts, breakout_name)
-        breakout_value = breakouts[breakout_name]
-
-        if breakout_value.is_a?(Array)
-          # New format: breakout contains array of conditions
-          breakout_value
-        elsif breakout_value.is_a?(Hash) && breakout_value["operator"]
-          # Complex operator breakout - skip for now
-          []
-        else
-          # Legacy format: breakout name is the condition
-          [breakout_name]
-        end
       end
 
       def breakout_metrics_fields(group_config)

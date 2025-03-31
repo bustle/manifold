@@ -102,43 +102,20 @@ RSpec.describe Manifold::API::Workspace do
             interval: DAY
           metrics:
             taps:
-              breakouts:
+              conditions:
                 paid: IS_PAID(context.location)
                 organic: IS_ORGANIC(context.location)
-                paidOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: AND
-                paidOrOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: OR
-                notPaid:
-                  fields:
-                    - paid
-                  operator: NOT
-                neitherPaidNorOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: NOR
-                notBothPaidAndOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: NAND
-                eitherPaidOrOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: XOR
-                similarPaidOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: XNOR
+                us: context.geo.country = 'US'
+                global: context.geo.country != 'US'
+
+              breakouts:
+                acquisition:
+                  - paid
+                  - organic
+                geography:
+                  - us
+                  - global
+
               aggregations:
                 countif: tapCount
                 sumif:
@@ -277,26 +254,26 @@ RSpec.describe Manifold::API::Workspace do
 
       include_examples "breakout metrics", "paid"
       include_examples "breakout metrics", "organic"
-      include_examples "breakout metrics", "paidOrganic"
-      include_examples "breakout metrics", "paidOrOrganic"
-      include_examples "breakout metrics", "notPaid"
-      include_examples "breakout metrics", "neitherPaidNorOrganic"
-      include_examples "breakout metrics", "notBothPaidAndOrganic"
-      include_examples "breakout metrics", "eitherPaidOrOrganic"
-      include_examples "breakout metrics", "similarPaidOrganic"
+      include_examples "breakout metrics", "us"
+      include_examples "breakout metrics", "global"
 
-      it "includes all breakouts in the metrics fields" do
+      # Test intersection fields
+      include_examples "breakout metrics", "paidUs"
+      include_examples "breakout metrics", "paidGlobal"
+      include_examples "breakout metrics", "organicUs"
+      include_examples "breakout metrics", "organicGlobal"
+
+      it "includes all condition fields and intersection fields in the metrics fields" do
         expect(schema_fields[:metrics]["fields"]
           .find { |f| f["name"] == "taps" }["fields"]
           .map { |f| f["name"] })
-          .to match_array(expected_breakout_names)
+          .to match_array(expected_field_names)
       end
 
-      def expected_breakout_names
+      def expected_field_names
         %w[
-          paid organic paidOrganic paidOrOrganic notPaid
-          neitherPaidNorOrganic notBothPaidAndOrganic
-          eitherPaidOrOrganic similarPaidOrganic
+          paid organic us global
+          paidUs paidGlobal organicUs organicGlobal
         ]
       end
 
@@ -315,11 +292,6 @@ RSpec.describe Manifold::API::Workspace do
 
       def parse_manifold_schema
         JSON.parse(workspace.tables_directory.join("manifold.json").read)
-      end
-
-      def get_dimension(field)
-        dimensions = parse_dimensions_schema.find { |f| f["name"] == "dimensions" }
-        dimensions["fields"].find { |f| f["name"] == field }
       end
 
       def parse_metrics_schema(group_name)
@@ -424,8 +396,11 @@ RSpec.describe Manifold::API::Workspace do
           metrics:
             taps:
               source: analytics.events
-              breakouts:
+              conditions:
                 paid: IS_PAID(context.location)
+              breakouts:
+                acquisition:
+                  - paid
               aggregations:
                 countif: tapCount
         YAML
