@@ -129,20 +129,12 @@ module Manifold
         return [] unless group_config["aggregations"]
 
         # Generate condition fields
-        condition_fields = generate_condition_fields(get_conditions_list(group_config), group_config)
+        condition_fields = generate_condition_fields(group_config["conditions"].keys, group_config)
 
         # Generate intersection fields between breakout groups
         intersection_fields = generate_breakout_intersection_fields(group_config)
 
         condition_fields + intersection_fields
-      end
-
-      def get_conditions_list(group_config)
-        if group_config["conditions"]
-          group_config["conditions"].keys
-        else
-          extract_conditions_from_breakouts(group_config["breakouts"])
-        end
       end
 
       def create_metric_field(field_name, group_config)
@@ -152,16 +144,6 @@ module Manifold
           "mode" => "NULLABLE",
           "fields" => breakout_metrics_fields(group_config)
         }
-      end
-
-      def extract_conditions_from_breakouts(breakouts)
-        return [] unless breakouts.is_a?(Hash)
-
-        conditions = []
-        breakouts.each_value do |breakout_values|
-          conditions.concat(breakout_values) if breakout_values.is_a?(Array)
-        end
-        conditions.uniq
       end
 
       def generate_condition_fields(conditions, group_config)

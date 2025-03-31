@@ -169,49 +169,6 @@ RSpec.describe Manifold::API::SchemaManager do
     end
   end
 
-  describe "when conditions are not explicitly defined" do
-    subject(:conditional_fields) { metric_render_fields }
-
-    let(:manifold_yaml) do
-      {
-        "metrics" => {
-          "renders" => {
-            "breakouts" => {
-              "device" => %w[mobile desktop],
-              "region" => %w[us global]
-            },
-            "aggregations" => {
-              "countif" => "renderCount"
-            }
-          }
-        }
-      }
-    end
-
-    def metric_render_fields
-      metrics_fields = schema_manager.send(:metrics_fields)
-      renders_field = metrics_fields.find { |field| field["name"] == "renders" }
-      renders_field["fields"]
-    end
-
-    it "derives condition fields from breakouts" do
-      condition_names = conditional_fields.map { |field| field["name"] }
-      expect(condition_names).to include("mobile", "desktop", "us", "global")
-    end
-
-    it "generates mobile-us intersection" do
-      condition_names = conditional_fields.map { |field| field["name"] }
-      mobile_us_variants = %w[mobileUs usMobile]
-      expect(mobile_us_variants.any? { |variant| condition_names.include?(variant) }).to be true
-    end
-
-    it "generates desktop-us intersection" do
-      condition_names = conditional_fields.map { |field| field["name"] }
-      desktop_us_variants = %w[desktopUs usDesktop]
-      expect(desktop_us_variants.any? { |variant| condition_names.include?(variant) }).to be true
-    end
-  end
-
   describe "#write_schemas" do
     subject(:tables_dir) { Pathname.pwd.join("tables") }
 
