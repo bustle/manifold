@@ -107,6 +107,8 @@ RSpec.describe Manifold::API::Workspace do
                 organic: IS_ORGANIC(context.location)
                 us: context.geo.country = 'US'
                 global: context.geo.country != 'US'
+                retargeting: context.campaign_type = 'RETARGETING'
+                prospecting: context.campaign_type = 'PROSPECTING'
 
               breakouts:
                 acquisition:
@@ -115,6 +117,9 @@ RSpec.describe Manifold::API::Workspace do
                 geography:
                   - us
                   - global
+                campaign:
+                  - retargeting
+                  - prospecting
 
               aggregations:
                 countif: tapCount
@@ -256,12 +261,32 @@ RSpec.describe Manifold::API::Workspace do
       include_examples "breakout metrics", "organic"
       include_examples "breakout metrics", "us"
       include_examples "breakout metrics", "global"
+      include_examples "breakout metrics", "retargeting"
+      include_examples "breakout metrics", "prospecting"
 
-      # Test intersection fields
+      # Test two-way intersection fields
       include_examples "breakout metrics", "paidUs"
       include_examples "breakout metrics", "paidGlobal"
       include_examples "breakout metrics", "organicUs"
       include_examples "breakout metrics", "organicGlobal"
+      include_examples "breakout metrics", "paidRetargeting"
+      include_examples "breakout metrics", "paidProspecting"
+      include_examples "breakout metrics", "organicRetargeting"
+      include_examples "breakout metrics", "organicProspecting"
+      include_examples "breakout metrics", "usRetargeting"
+      include_examples "breakout metrics", "usProspecting"
+      include_examples "breakout metrics", "globalRetargeting"
+      include_examples "breakout metrics", "globalProspecting"
+
+      # Test three-way intersection fields
+      include_examples "breakout metrics", "paidUsRetargeting"
+      include_examples "breakout metrics", "paidUsProspecting"
+      include_examples "breakout metrics", "paidGlobalRetargeting"
+      include_examples "breakout metrics", "paidGlobalProspecting"
+      include_examples "breakout metrics", "organicUsRetargeting"
+      include_examples "breakout metrics", "organicUsProspecting"
+      include_examples "breakout metrics", "organicGlobalRetargeting"
+      include_examples "breakout metrics", "organicGlobalProspecting"
 
       it "includes all condition fields and intersection fields in the metrics fields" do
         expect(schema_fields[:metrics]["fields"]
@@ -272,8 +297,12 @@ RSpec.describe Manifold::API::Workspace do
 
       def expected_field_names
         %w[
-          paid organic us global
+          paid organic us global retargeting prospecting
           paidUs paidGlobal organicUs organicGlobal
+          paidRetargeting paidProspecting organicRetargeting organicProspecting
+          usRetargeting usProspecting globalRetargeting globalProspecting
+          paidUsRetargeting paidUsProspecting paidGlobalRetargeting paidGlobalProspecting
+          organicUsRetargeting organicUsProspecting organicGlobalRetargeting organicGlobalProspecting
         ]
       end
 

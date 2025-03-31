@@ -24,6 +24,9 @@ metrics:
       device:
         - mobile
         - desktop
+      acquisition:
+        - organic
+        - paid
       region:
         - us
         - global
