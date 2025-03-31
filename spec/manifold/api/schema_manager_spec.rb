@@ -9,7 +9,17 @@ RSpec.describe Manifold::API::SchemaManager do
   let(:name) { "test_workspace" }
   let(:vectors) { ["TestVector"] }
   let(:vector_service) { instance_spy(Manifold::Services::VectorService) }
-  let(:manifold_yaml) do
+  let(:manifold_yaml) { build_test_manifold_yaml }
+
+  before do
+    # Mock the vector service
+    allow(vector_service).to receive(:load_vector_schema).and_return(
+      { "name" => "test_vector", "type" => "STRING", "mode" => "NULLABLE" }
+    )
+  end
+
+  # rubocop:disable Metrics/MethodLength
+  def build_test_manifold_yaml
     {
       "metrics" => {
         "renders" => {
@@ -35,117 +45,133 @@ RSpec.describe Manifold::API::SchemaManager do
       }
     }
   end
-
-  before do
-    # Mock the vector service
-    allow(vector_service).to receive(:load_vector_schema).and_return(
-      { "name" => "test_vector", "type" => "STRING", "mode" => "NULLABLE" }
-    )
-  end
+  # rubocop:enable Metrics/MethodLength
 
   describe "#dimensions_schema" do
+    subject(:schema) { schema_manager.dimensions_schema }
+
     it "includes required id field" do
-      schema = schema_manager.dimensions_schema
       expect(schema).to include(
         { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" }
       )
     end
 
     it "includes dimensions field with RECORD type" do
-      schema = schema_manager.dimensions_schema
       dimensions_field = schema.find { |f| f["name"] == "dimensions" }
       expect(dimensions_field["type"]).to eq("RECORD")
     end
 
     it "includes dimensions field with REQUIRED mode" do
-      schema = schema_manager.dimensions_schema
       dimensions_field = schema.find { |f| f["name"] == "dimensions" }
       expect(dimensions_field["mode"]).to eq("REQUIRED")
     end
   end
 
   describe "#manifold_schema" do
+    subject(:schema) { schema_manager.manifold_schema }
+
     it "includes required id field" do
-      schema = schema_manager.manifold_schema
       expect(schema).to include(
         { "type" => "STRING", "name" => "id", "mode" => "REQUIRED" }
       )
     end
 
     it "includes required timestamp field" do
-      schema = schema_manager.manifold_schema
       expect(schema).to include(
         { "type" => "TIMESTAMP", "name" => "timestamp", "mode" => "REQUIRED" }
       )
     end
 
     it "includes dimensions field with RECORD type" do
-      schema = schema_manager.manifold_schema
       dimensions_field = schema.find { |f| f["name"] == "dimensions" }
       expect(dimensions_field["type"]).to eq("RECORD")
     end
 
     it "includes metrics field with RECORD type" do
-      schema = schema_manager.manifold_schema
       metrics_field = schema.find { |f| f["name"] == "metrics" }
       expect(metrics_field["type"]).to eq("RECORD")
     end
   end
 
   describe "#metrics_fields" do
-    let(:metrics_fields) { schema_manager.send(:metrics_fields) }
-    let(:renders_field) { metrics_fields.find { |field| field["name"] == "renders" } }
-    let(:fields) { renders_field["fields"] }
-    let(:field_names) { fields.map { |field| field["name"] } }
+    # Using a simple helper method to clean up the spec and reduce memoized variables
+    def render_fields
+      metrics_fields = schema_manager.send(:metrics_fields)
+      renders_field = metrics_fields.find { |field| field["name"] == "renders" }
+      renders_field["fields"]
+    end
 
     it "includes the renders group field" do
+      metrics_fields = schema_manager.send(:metrics_fields)
+      renders_field = metrics_fields.find { |field| field["name"] == "renders" }
       expect(renders_field).not_to be_nil
     end
 
     it "includes all individual condition fields" do
+      field_names = render_fields.map { |field| field["name"] }
       expect(field_names).to include("mobile", "desktop", "us", "global")
     end
 
-    it "includes intersection fields between different breakout groups" do
-      # We support both naming conventions (first to second or second to first)
-      mobile_us_present = field_names.include?("mobileUs") || field_names.include?("usMobile")
-      desktop_us_present = field_names.include?("desktopUs") || field_names.include?("usDesktop")
-      mobile_global_present = field_names.include?("mobileGlobal") || field_names.include?("globalMobile")
-      desktop_global_present = field_names.include?("desktopGlobal") || field_names.include?("globalDesktop")
-
-      expect(mobile_us_present).to be(true)
-      expect(desktop_us_present).to be(true)
-      expect(mobile_global_present).to be(true)
-      expect(desktop_global_present).to be(true)
-    end
-
-    it "does not include intersection fields from the same breakout group" do
-      # Should not include mobile/desktop combinations (same breakout)
-      expect(field_names).not_to include("mobileDesktop")
-      expect(field_names).not_to include("desktopMobile")
-
-      # Should not include us/global combinations (same breakout)
-      expect(field_names).not_to include("usGlobal")
-      expect(field_names).not_to include("globalUs")
-    end
-
-    it "includes correct aggregation fields for individual conditions" do
-      mobile_field = fields.find { |field| field["name"] == "mobile" }
-      expect(mobile_field["fields"].map { |f| f["name"] }).to include("renderCount", "sequenceSum")
-    end
-
-    it "includes correct aggregation fields for intersection conditions" do
-      # Find an intersection field (using either naming convention)
-      intersection_field = fields.find do |field|
-        field["name"] == "mobileUs" || field["name"] == "usMobile"
+    describe "intersection fields" do
+      it "includes mobile-us intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names.any? { |name| %w[mobileUs usMobile].include?(name) }).to be true
       end
 
-      expect(intersection_field).not_to be_nil
-      expect(intersection_field["fields"].map { |f| f["name"] }).to include("renderCount", "sequenceSum")
+      it "includes desktop-us intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names.any? { |name| %w[desktopUs usDesktop].include?(name) }).to be true
+      end
+
+      it "includes mobile-global intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names.any? { |name| %w[mobileGlobal globalMobile].include?(name) }).to be true
+      end
+
+      it "includes desktop-global intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names.any? { |name| %w[desktopGlobal globalDesktop].include?(name) }).to be true
+      end
+    end
+
+    describe "exclusion of invalid intersections" do
+      it "does not include mobile-desktop intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names).not_to include("mobileDesktop", "desktopMobile")
+      end
+
+      it "does not include us-global intersection" do
+        field_names = render_fields.map { |field| field["name"] }
+        expect(field_names).not_to include("usGlobal", "globalUs")
+      end
+    end
+
+    describe "aggregation fields" do
+      it "includes correct aggregation fields for individual conditions" do
+        mobile_field = render_fields.find { |field| field["name"] == "mobile" }
+        aggregation_names = mobile_field["fields"].map { |f| f["name"] }
+        expect(aggregation_names).to include("renderCount", "sequenceSum")
+      end
+
+      it "includes renderCount in intersection fields" do
+        intersection_field = find_intersection_field
+        expect(intersection_field["fields"].map { |f| f["name"] }).to include("renderCount")
+      end
+
+      it "includes sequenceSum in intersection fields" do
+        intersection_field = find_intersection_field
+        expect(intersection_field["fields"].map { |f| f["name"] }).to include("sequenceSum")
+      end
+
+      def find_intersection_field
+        render_fields.find { |field| field["name"] =~ /mobile.*us|us.*mobile/i }
+      end
     end
   end
 
-  context "when conditions are not explicitly defined" do
+  describe "when conditions are not explicitly defined" do
+    subject(:conditional_fields) { metric_render_fields }
+
     let(:manifold_yaml) do
       {
         "metrics" => {
@@ -162,47 +188,52 @@ RSpec.describe Manifold::API::SchemaManager do
       }
     end
 
-    let(:metrics_fields) { schema_manager.send(:metrics_fields) }
-    let(:renders_field) { metrics_fields.find { |field| field["name"] == "renders" } }
-    let(:fields) { renders_field["fields"] }
-    let(:field_names) { fields.map { |field| field["name"] } }
-
-    it "derives condition fields from breakouts" do
-      expect(field_names).to include("mobile", "desktop", "us", "global")
+    def metric_render_fields
+      metrics_fields = schema_manager.send(:metrics_fields)
+      renders_field = metrics_fields.find { |field| field["name"] == "renders" }
+      renders_field["fields"]
     end
 
-    it "still generates intersection fields" do
-      # Check for either naming convention
-      mobile_us_present = field_names.include?("mobileUs") || field_names.include?("usMobile")
-      desktop_us_present = field_names.include?("desktopUs") || field_names.include?("usDesktop")
+    it "derives condition fields from breakouts" do
+      condition_names = conditional_fields.map { |field| field["name"] }
+      expect(condition_names).to include("mobile", "desktop", "us", "global")
+    end
 
-      expect(mobile_us_present).to be(true)
-      expect(desktop_us_present).to be(true)
+    it "generates mobile-us intersection" do
+      condition_names = conditional_fields.map { |field| field["name"] }
+      mobile_us_variants = %w[mobileUs usMobile]
+      expect(mobile_us_variants.any? { |variant| condition_names.include?(variant) }).to be true
+    end
+
+    it "generates desktop-us intersection" do
+      condition_names = conditional_fields.map { |field| field["name"] }
+      desktop_us_variants = %w[desktopUs usDesktop]
+      expect(desktop_us_variants.any? { |variant| condition_names.include?(variant) }).to be true
     end
   end
 
   describe "#write_schemas" do
-    let(:tables_directory) { Pathname.pwd.join("tables") }
+    subject(:tables_dir) { Pathname.pwd.join("tables") }
 
     before do
-      tables_directory.mkpath
-      schema_manager.write_schemas(tables_directory)
+      tables_dir.mkpath
+      schema_manager.write_schemas(tables_dir)
     end
 
     it "generates a dimensions schema file" do
-      expect(tables_directory.join("dimensions.json")).to be_file
+      expect(tables_dir.join("dimensions.json")).to be_file
     end
 
     it "generates a manifold schema file" do
-      expect(tables_directory.join("manifold.json")).to be_file
+      expect(tables_dir.join("manifold.json")).to be_file
     end
 
     it "generates a metrics directory" do
-      expect(tables_directory.join("metrics")).to be_directory
+      expect(tables_dir.join("metrics")).to be_directory
     end
 
     it "generates a metrics schema file for each metrics group" do
-      expect(tables_directory.join("metrics/renders.json")).to be_file
+      expect(tables_dir.join("metrics/renders.json")).to be_file
     end
   end
 end

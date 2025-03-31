@@ -57,16 +57,26 @@ module Manifold
       def write_metrics_schemas(tables_directory)
         return unless @manifold_yaml["metrics"]
 
-        # Create metrics subdirectory
+        create_metrics_directory(tables_directory)
+        write_individual_metrics_schemas(tables_directory)
+      end
+
+      def create_metrics_directory(tables_directory)
         metrics_directory = tables_directory.join("metrics")
         metrics_directory.mkpath
+      end
 
+      def write_individual_metrics_schemas(tables_directory)
         @manifold_yaml["metrics"].each do |group_name, group_config|
-          metrics_table_path = metrics_directory.join("#{group_name}.json")
-          metrics_table_schema = metrics_table_schema(group_name, group_config)
-          metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
-          @logger.info("Generated metrics table schema for '#{group_name}'.")
+          write_metrics_group_schema(tables_directory, group_name, group_config)
         end
+      end
+
+      def write_metrics_group_schema(tables_directory, group_name, group_config)
+        metrics_table_path = tables_directory.join("metrics", "#{group_name}.json")
+        metrics_table_schema = metrics_table_schema(group_name, group_config)
+        metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
+        @logger.info("Generated metrics table schema for '#{group_name}'.")
       end
 
       def metrics_table_schema(group_name, group_config)
@@ -118,35 +128,41 @@ module Manifold
       def group_metrics_fields(group_config)
         return [] unless group_config["aggregations"]
 
-        # If there are no breakouts but there are complex logic operations,
-        # use the old-style format
+        if legacy_format?(group_config)
+          handle_legacy_format(group_config)
+        else
+          handle_modern_format(group_config)
+        end
+      end
+
+      def legacy_format?(group_config)
+        has_complex_operators = group_config["breakouts"]&.values&.any? do |v|
+          v.is_a?(Hash) && v["operator"]
+        end
+
+        !group_config["breakouts"] || has_complex_operators
+      end
+
+      def handle_legacy_format(group_config)
         if group_config["breakouts"]&.values&.any? { |v| v.is_a?(Hash) && v["operator"] }
-          # Legacy format handling - treat direct keys as breakouts
-          return handle_legacy_breakouts(group_config)
+          handle_legacy_breakouts(group_config)
+        else
+          handle_no_breakouts(group_config)
         end
+      end
 
-        # If no breakouts defined at all, just return conditions/breakouts as is
-        unless group_config["breakouts"]
-          # Support for older format where breakouts are direct fields
-          # Add field for each explicitly defined condition or breakout
-          breakout_fields = (group_config.keys - %w[aggregations source filter]).map do |condition_name|
-            {
-              "name" => condition_name,
-              "type" => "RECORD",
-              "mode" => "NULLABLE",
-              "fields" => breakout_metrics_fields(group_config)
-            }
-          end
-          return breakout_fields
+      def handle_no_breakouts(group_config)
+        # Support for older format where breakouts are direct fields
+        direct_field_keys = group_config.keys - %w[aggregations source filter]
+
+        direct_field_keys.map do |condition_name|
+          create_metric_field(condition_name, group_config)
         end
+      end
 
+      def handle_modern_format(group_config)
         # Determine conditions list
-        conditions = if group_config["conditions"]
-                       group_config["conditions"].keys
-                     else
-                       # If no conditions defined, extract from breakouts
-                       extract_conditions_from_breakouts(group_config["breakouts"])
-                     end
+        conditions = get_conditions_list(group_config)
 
         # Generate individual condition fields
         condition_fields = generate_condition_fields(conditions, group_config)
@@ -157,87 +173,109 @@ module Manifold
         condition_fields + intersection_fields
       end
 
+      def get_conditions_list(group_config)
+        if group_config["conditions"]
+          group_config["conditions"].keys
+        else
+          extract_conditions_from_breakouts(group_config["breakouts"])
+        end
+      end
+
       def handle_legacy_breakouts(group_config)
         # For legacy format, each key directly in the metrics group is a breakout
-        breakout_fields = []
-
-        group_config["breakouts"].each_key do |breakout_name|
-          breakout_fields << {
-            "name" => breakout_name,
-            "type" => "RECORD",
-            "mode" => "NULLABLE",
-            "fields" => breakout_metrics_fields(group_config)
-          }
+        group_config["breakouts"].keys.map do |breakout_name|
+          create_metric_field(breakout_name, group_config)
         end
+      end
 
-        breakout_fields
+      def create_metric_field(field_name, group_config)
+        {
+          "name" => field_name,
+          "type" => "RECORD",
+          "mode" => "NULLABLE",
+          "fields" => breakout_metrics_fields(group_config)
+        }
       end
 
       def extract_conditions_from_breakouts(breakouts)
-        # Handle both string and array formats for breakouts
         conditions = []
+
         breakouts.each do |breakout_name, breakout_values|
-          if breakout_values.is_a?(Array)
-            conditions.concat(breakout_values)
-          elsif breakout_values.is_a?(Hash) && breakout_values["operator"]
-            # Skip complex operators in the new format
-            next
-          else
-            # For string format, use the breakout name as the condition
-            conditions << breakout_name
-          end
+          conditions.concat(get_conditions_for_breakout(breakout_name, breakout_values))
         end
+
         conditions.uniq
+      end
+
+      def get_conditions_for_breakout(breakout_name, breakout_values)
+        if breakout_values.is_a?(Array)
+          breakout_values
+        elsif breakout_values.is_a?(Hash) && breakout_values["operator"]
+          [] # Skip complex operators in the new format
+        else
+          [breakout_name] # For string format, use the breakout name as the condition
+        end
       end
 
       def generate_condition_fields(conditions, group_config)
         # Add a field for each condition
         conditions.map do |condition_name|
-          {
-            "name" => condition_name,
-            "type" => "RECORD",
-            "mode" => "NULLABLE",
-            "fields" => breakout_metrics_fields(group_config)
-          }
+          create_metric_field(condition_name, group_config)
         end
       end
 
       def generate_breakout_intersection_fields(group_config)
         return [] unless group_config["breakouts"]
+        return [] if should_skip_intersections?(group_config)
 
-        intersection_fields = []
+        generate_intersections(group_config)
+      end
+
+      def should_skip_intersections?(group_config)
         breakout_groups = group_config["breakouts"].keys
 
         # Skip if there's only one breakout group or if using legacy format
-        return [] if breakout_groups.size <= 1 ||
-                     group_config["breakouts"].values.any? { |v| v.is_a?(Hash) && v["operator"] }
+        breakout_groups.size <= 1 ||
+          group_config["breakouts"].values.any? { |v| v.is_a?(Hash) && v["operator"] }
+      end
 
-        # Generate all possible combinations of conditions from different breakout groups
+      def generate_intersections(group_config)
+        intersection_fields = []
+        breakout_groups = group_config["breakouts"].keys
+
+        # Generate all possible combinations of breakout groups
         breakout_groups.combination(2).each do |breakout_pair|
-          # Get the conditions in each breakout group
-          first_group = breakout_pair[0]
-          second_group = breakout_pair[1]
-
-          first_group_conditions = get_breakout_conditions(group_config["breakouts"], first_group)
-          second_group_conditions = get_breakout_conditions(group_config["breakouts"], second_group)
-
-          # For each pair of conditions from different breakout groups, create an intersection field
-          first_group_conditions.each do |first_condition|
-            second_group_conditions.each do |second_condition|
-              # Format the intersection name with the second condition capitalized
-              intersection_name = "#{first_condition}#{second_condition.capitalize}"
-
-              intersection_fields << {
-                "name" => intersection_name,
-                "type" => "RECORD",
-                "mode" => "NULLABLE",
-                "fields" => breakout_metrics_fields(group_config)
-              }
-            end
-          end
+          fields = generate_intersection_fields_for_pair(group_config, breakout_pair)
+          intersection_fields.concat(fields)
         end
 
         intersection_fields
+      end
+
+      def generate_intersection_fields_for_pair(group_config, breakout_pair)
+        first_group, second_group = breakout_pair
+
+        first_group_conditions = get_breakout_conditions(group_config["breakouts"], first_group)
+        second_group_conditions = get_breakout_conditions(group_config["breakouts"], second_group)
+
+        generate_intersection_combinations(
+          first_group_conditions,
+          second_group_conditions,
+          group_config
+        )
+      end
+
+      def generate_intersection_combinations(first_conditions, second_conditions, group_config)
+        fields = []
+
+        first_conditions.each do |first_condition|
+          second_conditions.each do |second_condition|
+            intersection_name = "#{first_condition}#{second_condition.capitalize}"
+            fields << create_metric_field(intersection_name, group_config)
+          end
+        end
+
+        fields
       end
 
       def get_breakout_conditions(breakouts, breakout_name)

@@ -162,16 +162,25 @@ RSpec.describe Manifold::API::Workspace do
         expect(schema).to include({ "type" => "STRING", "name" => "id", "mode" => "REQUIRED" })
       end
 
-      it "sets the dimensions fields" do
-        # Get dimensions directly since our mock is set up to provide the correct structure
+      it "includes user_id dimension field" do
+        user_fields = fetch_user_dimension_fields
+        expect(user_fields).to include(
+          { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" }
+        )
+      end
+
+      it "includes email dimension field" do
+        user_fields = fetch_user_dimension_fields
+        expect(user_fields).to include(
+          { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
+        )
+      end
+
+      def fetch_user_dimension_fields
         schema = parse_dimensions_schema
         dimensions = schema.find { |f| f["name"] == "dimensions" }
         user_dimension = dimensions["fields"].find { |f| f["name"] == "user" }
-
-        expect(user_dimension["fields"]).to include(
-          { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" },
-          { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
-        )
+        user_dimension["fields"]
       end
 
       it "includes required id field in manifold schema" do
@@ -245,22 +254,24 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       shared_examples "breakout metrics" do |breakout_name|
-        let(:breakout) do
-          schema_fields[:metrics]["fields"]
-            .find { |f| f["name"] == "taps" }["fields"]
-            .find { |f| f["name"] == breakout_name }
-        end
-
         it "includes tapCount metric" do
+          breakout = find_breakout(breakout_name)
           expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "tapCount", "mode" => "NULLABLE" }
           )
         end
 
         it "includes sequenceSum metric" do
+          breakout = find_breakout(breakout_name)
           expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "sequenceSum", "mode" => "NULLABLE" }
           )
+        end
+
+        def find_breakout(name)
+          schema_fields[:metrics]["fields"]
+            .find { |f| f["name"] == "taps" }["fields"]
+            .find { |f| f["name"] == name }
         end
       end
 
