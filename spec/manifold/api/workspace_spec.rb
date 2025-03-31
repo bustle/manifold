@@ -68,7 +68,24 @@ RSpec.describe Manifold::API::Workspace do
         }
       end
 
+      let(:vector_service) { instance_double(Manifold::Services::VectorService) }
+
       before do
+        # Use mock for VectorService
+        allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
+
+        # Mock successful vector schema loading
+        allow(vector_service).to receive(:load_vector_schema).with("User").and_return(
+          {
+            "name" => "user",
+            "type" => "RECORD",
+            "fields" => [
+              { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" },
+              { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
+            ]
+          }
+        )
+
         Pathname.pwd.join("vectors").mkpath
         Pathname.pwd.join("vectors", "user.yml").write(<<~YAML)
           attributes:
@@ -85,43 +102,25 @@ RSpec.describe Manifold::API::Workspace do
             interval: DAY
           metrics:
             taps:
-              breakouts:
+              conditions:
                 paid: IS_PAID(context.location)
                 organic: IS_ORGANIC(context.location)
-                paidOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: AND
-                paidOrOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: OR
-                notPaid:
-                  fields:
-                    - paid
-                  operator: NOT
-                neitherPaidNorOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: NOR
-                notBothPaidAndOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: NAND
-                eitherPaidOrOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: XOR
-                similarPaidOrganic:
-                  fields:
-                    - paid
-                    - organic
-                  operator: XNOR
+                us: context.geo.country = 'US'
+                global: context.geo.country != 'US'
+                retargeting: context.campaign_type = 'RETARGETING'
+                prospecting: context.campaign_type = 'PROSPECTING'
+
+              breakouts:
+                acquisition:
+                  - paid
+                  - organic
+                geography:
+                  - us
+                  - global
+                campaign:
+                  - retargeting
+                  - prospecting
+
               aggregations:
                 countif: tapCount
                 sumif:
@@ -145,11 +144,25 @@ RSpec.describe Manifold::API::Workspace do
         expect(schema).to include({ "type" => "STRING", "name" => "id", "mode" => "REQUIRED" })
       end
 
-      it "sets the dimensions fields" do
-        expect(get_dimension("user")["fields"]).to include(
-          { "type" => "STRING", "name" => "user_id", "mode" => "NULLABLE" },
-          { "type" => "STRING", "name" => "email", "mode" => "NULLABLE" }
+      it "includes user_id dimension field" do
+        user_fields = fetch_user_dimension_fields
+        expect(user_fields).to include(
+          { "name" => "user_id", "type" => "STRING", "mode" => "NULLABLE" }
         )
+      end
+
+      it "includes email dimension field" do
+        user_fields = fetch_user_dimension_fields
+        expect(user_fields).to include(
+          { "name" => "email", "type" => "STRING", "mode" => "NULLABLE" }
+        )
+      end
+
+      def fetch_user_dimension_fields
+        schema = parse_dimensions_schema
+        dimensions = schema.find { |f| f["name"] == "dimensions" }
+        user_dimension = dimensions["fields"].find { |f| f["name"] == "user" }
+        user_dimension["fields"]
       end
 
       it "includes required id field in manifold schema" do
@@ -223,47 +236,73 @@ RSpec.describe Manifold::API::Workspace do
       end
 
       shared_examples "breakout metrics" do |breakout_name|
-        let(:breakout) do
-          schema_fields[:metrics]["fields"]
-            .find { |f| f["name"] == "taps" }["fields"]
-            .find { |f| f["name"] == breakout_name }
-        end
-
         it "includes tapCount metric" do
+          breakout = find_breakout(breakout_name)
           expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "tapCount", "mode" => "NULLABLE" }
           )
         end
 
         it "includes sequenceSum metric" do
+          breakout = find_breakout(breakout_name)
           expect(breakout["fields"]).to include(
             { "type" => "INTEGER", "name" => "sequenceSum", "mode" => "NULLABLE" }
           )
+        end
+
+        def find_breakout(name)
+          schema_fields[:metrics]["fields"]
+            .find { |f| f["name"] == "taps" }["fields"]
+            .find { |f| f["name"] == name }
         end
       end
 
       include_examples "breakout metrics", "paid"
       include_examples "breakout metrics", "organic"
-      include_examples "breakout metrics", "paidOrganic"
-      include_examples "breakout metrics", "paidOrOrganic"
-      include_examples "breakout metrics", "notPaid"
-      include_examples "breakout metrics", "neitherPaidNorOrganic"
-      include_examples "breakout metrics", "notBothPaidAndOrganic"
-      include_examples "breakout metrics", "eitherPaidOrOrganic"
-      include_examples "breakout metrics", "similarPaidOrganic"
+      include_examples "breakout metrics", "us"
+      include_examples "breakout metrics", "global"
+      include_examples "breakout metrics", "retargeting"
+      include_examples "breakout metrics", "prospecting"
 
-      it "includes all breakouts in the metrics fields" do
+      # Test two-way intersection fields
+      include_examples "breakout metrics", "paidUs"
+      include_examples "breakout metrics", "paidGlobal"
+      include_examples "breakout metrics", "organicUs"
+      include_examples "breakout metrics", "organicGlobal"
+      include_examples "breakout metrics", "paidRetargeting"
+      include_examples "breakout metrics", "paidProspecting"
+      include_examples "breakout metrics", "organicRetargeting"
+      include_examples "breakout metrics", "organicProspecting"
+      include_examples "breakout metrics", "usRetargeting"
+      include_examples "breakout metrics", "usProspecting"
+      include_examples "breakout metrics", "globalRetargeting"
+      include_examples "breakout metrics", "globalProspecting"
+
+      # Test three-way intersection fields
+      include_examples "breakout metrics", "paidUsRetargeting"
+      include_examples "breakout metrics", "paidUsProspecting"
+      include_examples "breakout metrics", "paidGlobalRetargeting"
+      include_examples "breakout metrics", "paidGlobalProspecting"
+      include_examples "breakout metrics", "organicUsRetargeting"
+      include_examples "breakout metrics", "organicUsProspecting"
+      include_examples "breakout metrics", "organicGlobalRetargeting"
+      include_examples "breakout metrics", "organicGlobalProspecting"
+
+      it "includes all condition fields and intersection fields in the metrics fields" do
         expect(schema_fields[:metrics]["fields"]
           .find { |f| f["name"] == "taps" }["fields"]
           .map { |f| f["name"] })
-          .to match_array(expected_breakout_names)
+          .to match_array(expected_field_names)
       end
 
-      def expected_breakout_names
+      def expected_field_names
         %w[
-          paid organic paidOrganic paidOrOrganic notPaid
-          neitherPaidNorOrganic notBothPaidAndOrganic
-          eitherPaidOrOrganic similarPaidOrganic
+          paid organic us global retargeting prospecting
+          paidUs paidGlobal organicUs organicGlobal
+          paidRetargeting paidProspecting organicRetargeting organicProspecting
+          usRetargeting usProspecting globalRetargeting globalProspecting
+          paidUsRetargeting paidUsProspecting paidGlobalRetargeting paidGlobalProspecting
+          organicUsRetargeting organicUsProspecting organicGlobalRetargeting organicGlobalProspecting
         ]
       end
 
@@ -282,11 +321,6 @@ RSpec.describe Manifold::API::Workspace do
 
       def parse_manifold_schema
         JSON.parse(workspace.tables_directory.join("manifold.json").read)
-      end
-
-      def get_dimension(field)
-        dimensions = parse_dimensions_schema.find { |f| f["name"] == "dimensions" }
-        dimensions["fields"].find { |f| f["name"] == field }
       end
 
       def parse_metrics_schema(group_name)
@@ -391,8 +425,11 @@ RSpec.describe Manifold::API::Workspace do
           metrics:
             taps:
               source: analytics.events
-              breakouts:
+              conditions:
                 paid: IS_PAID(context.location)
+              breakouts:
+                acquisition:
+                  - paid
               aggregations:
                 countif: tapCount
         YAML

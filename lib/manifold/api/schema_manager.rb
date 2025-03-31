@@ -57,16 +57,26 @@ module Manifold
       def write_metrics_schemas(tables_directory)
         return unless @manifold_yaml["metrics"]
 
-        # Create metrics subdirectory
+        create_metrics_directory(tables_directory)
+        write_individual_metrics_schemas(tables_directory)
+      end
+
+      def create_metrics_directory(tables_directory)
         metrics_directory = tables_directory.join("metrics")
         metrics_directory.mkpath
+      end
 
+      def write_individual_metrics_schemas(tables_directory)
         @manifold_yaml["metrics"].each do |group_name, group_config|
-          metrics_table_path = metrics_directory.join("#{group_name}.json")
-          metrics_table_schema = metrics_table_schema(group_name, group_config)
-          metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
-          @logger.info("Generated metrics table schema for '#{group_name}'.")
+          write_metrics_group_schema(tables_directory, group_name, group_config)
         end
+      end
+
+      def write_metrics_group_schema(tables_directory, group_name, group_config)
+        metrics_table_path = tables_directory.join("metrics", "#{group_name}.json")
+        metrics_table_schema = metrics_table_schema(group_name, group_config)
+        metrics_table_path.write(JSON.pretty_generate(metrics_table_schema).concat("\n"))
+        @logger.info("Generated metrics table schema for '#{group_name}'.")
       end
 
       def metrics_table_schema(group_name, group_config)
@@ -116,16 +126,110 @@ module Manifold
       end
 
       def group_metrics_fields(group_config)
-        return [] unless group_config["breakouts"] && group_config["aggregations"]
+        return [] unless group_config["aggregations"]
 
-        group_config["breakouts"].map do |breakout_name, _breakout_config|
-          {
-            "name" => breakout_name,
-            "type" => "RECORD",
-            "mode" => "NULLABLE",
-            "fields" => breakout_metrics_fields(group_config)
-          }
+        # Generate condition fields
+        condition_fields = generate_condition_fields(get_conditions_list(group_config), group_config)
+
+        # Generate intersection fields between breakout groups
+        intersection_fields = generate_breakout_intersection_fields(group_config)
+
+        condition_fields + intersection_fields
+      end
+
+      def get_conditions_list(group_config)
+        return [] unless group_config["conditions"]
+
+        group_config["conditions"].keys
+      end
+
+      def create_metric_field(field_name, group_config)
+        {
+          "name" => field_name,
+          "type" => "RECORD",
+          "mode" => "NULLABLE",
+          "fields" => breakout_metrics_fields(group_config)
+        }
+      end
+
+      def generate_condition_fields(conditions, group_config)
+        conditions.map do |condition_name|
+          create_metric_field(condition_name, group_config)
         end
+      end
+
+      def generate_breakout_intersection_fields(group_config)
+        return [] unless group_config["breakouts"]
+        return [] if group_config["breakouts"].keys.size <= 1
+
+        generate_intersections(group_config)
+      end
+
+      def generate_intersections(group_config)
+        breakout_groups = group_config["breakouts"].keys
+
+        # Generate all valid combinations of breakout groups (sizes 2 to n)
+        (2..breakout_groups.size).flat_map do |size|
+          breakout_groups.combination(size).flat_map do |combo|
+            generate_intersection_fields_for_combination(group_config, combo)
+          end
+        end
+      end
+
+      def add_combinations_of_size(size, breakout_groups, group_config, all_fields)
+        breakout_groups.combination(size).each do |breakout_combination|
+          fields = generate_intersection_fields_for_combination(group_config, breakout_combination)
+          all_fields.concat(fields)
+        end
+      end
+
+      def generate_intersection_fields_for_combination(group_config, breakout_combination)
+        # Get all conditions from the given breakout groups
+        condition_sets = breakout_combination.map do |breakout_group|
+          group_config["breakouts"][breakout_group]
+        end
+
+        # Generate all combinations of one condition from each breakout group
+        generate_all_condition_combinations(condition_sets, group_config)
+      end
+
+      def generate_all_condition_combinations(condition_sets, group_config)
+        # Start with first breakout group's conditions
+        combinations = condition_sets.first.map { |condition| [condition] }
+
+        # Extend combinations with remaining breakout groups
+        extended_combinations = extend_combinations_with_remaining_sets(combinations, condition_sets[1..])
+
+        # Convert combinations to field definitions
+        create_intersection_fields(extended_combinations, group_config)
+      end
+
+      def extend_combinations_with_remaining_sets(initial_combinations, remaining_sets)
+        remaining_sets.reduce(initial_combinations) do |combinations, conditions|
+          extend_combinations_with_conditions(combinations, conditions)
+        end
+      end
+
+      def extend_combinations_with_conditions(existing_combinations, conditions)
+        existing_combinations.flat_map do |existing_combination|
+          conditions.map { |condition| existing_combination + [condition] }
+        end
+      end
+
+      def create_intersection_fields(combinations, group_config)
+        combinations.map do |condition_combination|
+          # Format name with first condition lowercase, others capitalized
+          field_name = format_intersection_name(condition_combination)
+          create_metric_field(field_name, group_config)
+        end
+      end
+
+      def format_intersection_name(condition_combination)
+        name = condition_combination.first
+        condition_combination[1..].each do |condition|
+          name += condition.capitalize
+        end
+        name
       end
 
       def breakout_metrics_fields(group_config)

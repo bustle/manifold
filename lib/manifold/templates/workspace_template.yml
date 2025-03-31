@@ -14,9 +14,22 @@ timestamp:
 
 metrics:
   renders:
+    conditions:
+      mobile: IS_DESKTOP(context.device)
+      desktop: IS_MOBILE(context.device)
+      us: context.geo.country = 'US'
+      global: context.geo.country != 'US'
+    
     breakouts:
-      paid: IS_PAID(context.location)
-      organic: IS_ORGANIC(context.location)
+      device:
+        - mobile
+        - desktop
+      acquisition:
+        - organic
+        - paid
+      region:
+        - us
+        - global
 
     aggregations:
       countif: renderCount
