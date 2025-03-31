@@ -166,15 +166,14 @@ module Manifold
       end
 
       def generate_intersections(group_config)
-        intersections = []
         breakout_groups = group_config["breakouts"].keys
 
-        # Generate combinations of different sizes (2 to n breakout groups)
-        (2..breakout_groups.size).each do |combination_size|
-          add_combinations_of_size(combination_size, breakout_groups, group_config, intersections)
+        # Generate all valid combinations of breakout groups (sizes 2 to n)
+        (2..breakout_groups.size).flat_map do |size|
+          breakout_groups.combination(size).flat_map do |combo|
+            generate_intersection_fields_for_combination(group_config, combo)
+          end
         end
-
-        intersections
       end
 
       def add_combinations_of_size(size, breakout_groups, group_config, all_fields)
