@@ -212,15 +212,9 @@ module Manifold
       end
 
       def extend_combinations_with_conditions(existing_combinations, conditions)
-        new_combinations = []
-
-        existing_combinations.each do |existing_combination|
-          conditions.each do |condition|
-            new_combinations << (existing_combination + [condition])
-          end
+        existing_combinations.flat_map do |existing_combination|
+          conditions.map { |condition| existing_combination + [condition] }
         end
-
-        new_combinations
       end
 
       def create_intersection_fields(combinations, group_config)
