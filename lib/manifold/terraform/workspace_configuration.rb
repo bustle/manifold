@@ -253,8 +253,10 @@ module Manifold
         @manifold_config["metrics"].each_with_object({}) do |(_grp, grp_cfg), routines|
           next unless grp_cfg.is_a?(Hash) && grp_cfg["conditions"].is_a?(Hash)
 
-          grp_cfg["conditions"].each do |cond_name, cond_cfg|
-            routines[build_routine_id(cond_name)] = condition_routine_attributes(build_routine_id(cond_name), cond_cfg)
+          grp_cfg["conditions"].each do |name, cfg|
+            id = build_routine_id(name)
+            attrs = condition_routine_attributes(id, cfg)
+            routines[id] = attrs
           end
         end
       end
