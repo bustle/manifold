@@ -151,13 +151,27 @@ module Manifold
 
       def build_table_config(table_id, schema_path = nil)
         schema_path ||= "#{table_id.downcase}.json"
-        {
+        config = {
           "dataset_id" => @name,
           "project" => "${var.project_id}",
           "table_id" => table_id,
           "schema" => "${file(\"${path.module}/tables/#{schema_path}\")}",
           "depends_on" => ["google_bigquery_dataset.#{@name}"]
         }
+
+        maybe_apply_partitioning(config, table_id)
+      end
+
+      def maybe_apply_partitioning(config, table_id)
+        if @manifold_config&.dig("partitioning", "interval") && table_id != "Dimensions"
+          interval = @manifold_config["partitioning"]["interval"]
+          config["time_partitioning"] = {
+            "type" => interval,
+            "field" => "timestamp"
+          }
+        end
+
+        config
       end
     end
 

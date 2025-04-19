@@ -12,6 +12,9 @@ timestamp:
   interval: HOUR
   field: timestamp
 
+partitioning:
+  interval: HOUR
+
 metrics:
   renders:
     conditions:
