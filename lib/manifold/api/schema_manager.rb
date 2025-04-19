@@ -176,13 +176,6 @@ module Manifold
         end
       end
 
-      def add_combinations_of_size(size, breakout_groups, group_config, all_fields)
-        breakout_groups.combination(size).each do |breakout_combination|
-          fields = generate_intersection_fields_for_combination(group_config, breakout_combination)
-          all_fields.concat(fields)
-        end
-      end
-
       def generate_intersection_fields_for_combination(group_config, breakout_combination)
         # Get all conditions from the given breakout groups
         condition_sets = breakout_combination.map do |breakout_group|
