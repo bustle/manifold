@@ -22,6 +22,30 @@ RSpec.describe Manifold::Terraform::TableConfigBuilder do
       it { is_expected.to include("depends_on" => ["google_bigquery_dataset.#{name}"]) }
     end
 
+    context "when partitioning config is provided" do
+      subject(:partitioned_configs) { builder_with_partition.build_table_configs }
+
+      let(:partitioning_interval) { "DAY" }
+      let(:config) { { "partitioning" => { "interval" => partitioning_interval }, "metrics" => { "foo" => {} } } }
+      let(:builder_with_partition) { described_class.new(name, config) }
+
+      it "does not add time partitioning to dimensions table" do
+        expect(partitioned_configs["dimensions"]).not_to have_key("time_partitioning")
+      end
+
+      it "adds time partitioning to manifold table" do
+        expect(partitioned_configs["manifold"]).to include(
+          "time_partitioning" => { "type" => partitioning_interval, "field" => "timestamp" }
+        )
+      end
+
+      it "includes time partitioning for metric tables" do
+        expect(partitioned_configs["foometrics"]).to include(
+          "time_partitioning" => { "type" => partitioning_interval, "field" => "timestamp" }
+        )
+      end
+    end
+
     describe "manifold table configuration" do
       subject(:manifold_config) { configs["manifold"] }
 
