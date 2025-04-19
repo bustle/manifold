@@ -115,6 +115,56 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         )
       end
     end
+
+    context "when metric conditions are present" do
+      before do
+        # define metrics with conditions for scalar function routines
+        config.manifold_config = {
+          "metrics" => {
+            "renders" => {
+              "conditions" => {
+                "organic" => {
+                  "args" => { "acquisition" => "STRING" },
+                  "body" => "acquisition = 'organic'"
+                },
+                "paid" => {
+                  "args" => { "acquisition" => "STRING" },
+                  "body" => "acquisition = 'paid'"
+                }
+              }
+            }
+          }
+        }
+      end
+
+      let(:routines) { json["resource"]["google_bigquery_routine"] }
+
+      it "includes scalar function routines for each condition" do
+        expect(routines.keys).to include("isOrganic", "isPaid")
+      end
+
+      # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+      it "correctly configures a condition routine" do
+        organic = routines["isOrganic"]
+        expect(organic).to include(
+          "dataset_id" => name,
+          "project" => "${var.project_id}",
+          "routine_id" => "isOrganic",
+          "routine_type" => "SCALAR_FUNCTION",
+          "language" => "SQL",
+          "definition_body" => "acquisition = 'organic'",
+          "depends_on" => ["google_bigquery_dataset.#{name}"]
+        )
+        # arguments and return_type blocks
+        expect(organic["arguments"]).to eq([
+                                             { "name" => "acquisition", "data_type" => [{ "type_kind" => "STRING" }] }
+                                           ])
+        expect(organic["return_type"]).to eq([
+                                               { "data_type" => [{ "type_kind" => "BOOL" }] }
+                                             ])
+      end
+      # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
+    end
   end
 
   context "when manifold configuration is present" do

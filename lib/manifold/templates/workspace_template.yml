@@ -15,11 +15,31 @@ timestamp:
 metrics:
   renders:
     conditions:
-      mobile: IS_DESKTOP(context.device)
-      desktop: IS_MOBILE(context.device)
-      us: context.geo.country = 'US'
-      global: context.geo.country != 'US'
-    
+      mobile:
+        args:
+          device: STRING
+        body: device = 'mobile'
+      desktop:
+        args:
+          device: STRING
+        body: device = 'desktop'
+      us:
+        args:
+          country: STRING
+        body: country = 'US'
+      global:
+        args:
+          country: STRING
+        body: country != 'US'
+      organic:
+        args:
+          acquisition: STRING
+        body: acquisition = 'organic'
+      paid:
+        args:
+          acquisition: STRING
+        body: acquisition = 'paid'
+
     breakouts:
       device:
         - mobile
