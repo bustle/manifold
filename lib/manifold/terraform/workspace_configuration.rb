@@ -162,7 +162,7 @@ module Manifold
     end
 
     # Represents a Terraform configuration for a Manifold workspace.
-    class WorkspaceConfiguration < Configuration
+    class WorkspaceConfiguration < Configuration # rubocop:disable Metrics/ClassLength
       attr_reader :name
       attr_writer :dimensions_config, :manifold_config
 
@@ -214,7 +214,9 @@ module Manifold
           "merge_dimensions" => dimensions_routine_attributes,
           "merge_manifold" => manifold_routine_attributes
         }.compact
-
+        # add user-defined condition routines, if any
+        conds = build_condition_routines
+        routines.merge!(conds) unless conds.empty?
         routines.empty? ? nil : routines
       end
 
@@ -242,6 +244,53 @@ module Manifold
           "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
+      end
+
+      # generate scalar function routines for defined conditions
+      def build_condition_routines
+        return {} unless @manifold_config.is_a?(Hash) && @manifold_config["metrics"].is_a?(Hash)
+
+        @manifold_config["metrics"].each_with_object({}) do |(_grp, grp_cfg), routines|
+          next unless grp_cfg.is_a?(Hash) && grp_cfg["conditions"].is_a?(Hash)
+
+          grp_cfg["conditions"].each do |name, cfg|
+            id = build_routine_id(name)
+            attrs = condition_routine_attributes(id, cfg)
+            routines[id] = attrs
+          end
+        end
+      end
+
+      # build attributes for a single condition routine
+      def condition_routine_attributes(routine_id, cond_cfg)
+        attrs = {
+          "dataset_id" => name, "project" => "${var.project_id}", "routine_id" => routine_id,
+          "routine_type" => "SCALAR_FUNCTION", "language" => "SQL",
+          "definition_body" => cond_cfg["body"], "depends_on" => ["google_bigquery_dataset.#{name}"]
+        }
+        args = build_arguments(cond_cfg)
+        attrs["arguments"] = args if args
+        attrs["return_type"] = default_return_type
+        attrs
+      end
+
+      # helper to extract argument blocks from condition config
+      def build_arguments(cond_cfg)
+        return unless cond_cfg["args"].is_a?(Hash) && !cond_cfg["args"].empty?
+
+        cond_cfg["args"].map do |arg_name, arg_type|
+          { "name" => arg_name, "data_type" => [{ "type_kind" => arg_type }] }
+        end
+      end
+
+      # default return type for condition routines
+      def default_return_type
+        [{ "data_type" => [{ "type_kind" => "BOOL" }] }]
+      end
+
+      # helper to build routine identifier from condition name
+      def build_routine_id(cond_name)
+        "is#{cond_name.to_s.split(/_|\\s+/).map(&:capitalize).join}"
       end
     end
   end
