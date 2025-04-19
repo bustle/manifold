@@ -6,8 +6,8 @@ module Manifold
   class CLI < Thor
     attr_accessor :logger
 
-    def initialize(*args, logger: Logger.new($stdout))
-      super(*args)
+    def initialize(*, logger: Logger.new($stdout))
+      super(*)
 
       self.logger = logger
       logger.level = Logger::INFO
