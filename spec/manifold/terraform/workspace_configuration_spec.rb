@@ -109,10 +109,25 @@ RSpec.describe Manifold::Terraform::WorkspaceConfiguration do
         config.manifold_config = manifold_config
       end
 
+      let(:taps_routine) { json["resource"]["google_bigquery_routine"]["merge_taps"] }
+
       it "includes metrics table configurations" do
         expect(json["resource"]["google_bigquery_table"]).to include(
           "tapsmetrics" => expected_metrics_table("taps")
         )
+      end
+
+      it "includes the merge_taps routine" do
+        routines = json["resource"]["google_bigquery_routine"]
+        expect(routines).to include("merge_taps")
+      end
+
+      it "sets the correct definition_body for merge_taps routine" do
+        expect(taps_routine["definition_body"]).to eq("${file(\"${path.module}/routines/merge_taps.sql\")}")
+      end
+
+      it "sets the routine_type for merge_taps routine" do
+        expect(taps_routine["routine_type"]).to eq("PROCEDURE")
       end
     end
 

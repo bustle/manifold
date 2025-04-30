@@ -26,6 +26,7 @@ module Manifold
     end
 
     # Encapsulates a single manifold.
+    # rubocop:disable Metrics/ClassLength
     class Workspace
       attr_reader :name, :template_path, :logger
 
@@ -111,6 +112,7 @@ module Manifold
 
       def write_metrics_merge_sql
         return unless manifold_file
+
         @manifold_yaml["metrics"]&.each_key do |group_name|
           sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
           sql = sql_builder.build_metric_merge_sql(group_name)
@@ -162,5 +164,6 @@ module Manifold
         terraform_generator.generate(terraform_main_path)
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

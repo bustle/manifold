@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/MethodLength, Metrics/AbcSize
+
 module Manifold
   module Terraform
+    # rubocop:disable Metrics/ClassLength
     # Handles building SQL for manifold routines
     class SQLBuilder
       def initialize(name, manifold_config)
@@ -35,6 +38,7 @@ module Manifold
 
       def build_metric_merge_sql(group_name)
         return "" unless valid_config? && @manifold_config["metrics"][group_name]
+
         config = @manifold_config["metrics"][group_name]
         ts_field = timestamp_field
         interval = @manifold_config.dig("timestamp", "interval")
@@ -52,10 +56,8 @@ module Manifold
             GROUP BY id, timestamp
           ) AS source
           ON source.id = target.id AND source.timestamp = target.timestamp
-          WHEN MATCHED THEN
-            UPDATE SET metrics = source.metrics
-          WHEN NOT MATCHED THEN
-            INSERT ROW;
+          WHEN MATCHED THEN UPDATE SET metrics = source.metrics
+          WHEN NOT MATCHED THEN INSERT ROW;
         SQL
       end
 
@@ -134,7 +136,7 @@ module Manifold
       end
 
       # Builds the inner struct fields for a metrics group
-      def build_group_metrics_struct(group_name, config)
+      def build_group_metrics_struct(_group_name, config)
         condition_names = config["conditions"]&.keys || []
         intersection_names = build_intersection_names(config)
         field_names = condition_names + intersection_names
@@ -151,7 +153,7 @@ module Manifold
               aggregates << "SUM(IF(#{expr}, #{field}, 0)) AS #{metric}"
             end
           end
-          "STRUCT(#{aggregates.join(', ')}) AS #{name}"
+          "STRUCT(#{aggregates.join(", ")}) AS #{name}"
         end
         parts.join(", ")
       end
@@ -161,17 +163,19 @@ module Manifold
         cond_cfg = config["conditions"][name]
         args = cond_cfg["args"]&.keys
         if args && !args.empty?
-          "is#{name.capitalize}(#{args.join(', ')})"
+          "is#{name.capitalize}(#{args.join(", ")})"
         else
           cond_cfg["body"]
         end
       end
 
       # Builds intersection condition names from breakouts
+      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def build_intersection_names(config)
         breakouts = config["breakouts"] || {}
         groups = breakouts.keys
         return [] if groups.size <= 1
+
         (2..groups.size).flat_map do |size|
           groups.combination(size).flat_map do |combo|
             condition_sets = combo.map { |g| breakouts[g] }
@@ -183,6 +187,7 @@ module Manifold
           end
         end
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       # Formats intersection names (first lowercase, others capitalized)
       def format_intersection_name(conds)
@@ -191,6 +196,7 @@ module Manifold
         name
       end
     end
+    # rubocop:enable Metrics/ClassLength
 
     # Handles building table configurations
     class TableConfigBuilder
@@ -307,6 +313,7 @@ module Manifold
         }
       end
 
+      # rubocop:disable Metrics/MethodLength
       def routine_config
         routines = {
           "merge_dimensions" => dimensions_routine_attributes,
@@ -323,6 +330,7 @@ module Manifold
         routines.merge!(conds) unless conds.empty?
         routines.empty? ? nil : routines
       end
+      # rubocop:enable Metrics/MethodLength
 
       def dimensions_routine_attributes
         return nil if @vectors.empty? || @dimensions_config.nil?
