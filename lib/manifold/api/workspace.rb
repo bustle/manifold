@@ -59,6 +59,7 @@ module Manifold
 
         write_manifold_merge_sql
         write_dimensions_merge_sql
+        write_metrics_merge_sql
         generate_terraform
         logger.info("Generated Terraform configuration for workspace '#{name}'.")
       end
@@ -106,6 +107,15 @@ module Manifold
         return unless sql
 
         write_dimensions_merge_sql_file(sql)
+      end
+
+      def write_metrics_merge_sql
+        return unless manifold_file
+        @manifold_yaml["metrics"]&.each_key do |group_name|
+          sql_builder = Terraform::SQLBuilder.new(name, manifold_yaml)
+          sql = sql_builder.build_metric_merge_sql(group_name)
+          routines_directory.join("merge_#{group_name}.sql").write(sql)
+        end
       end
 
       def valid_dimensions_config?

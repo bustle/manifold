@@ -33,6 +33,32 @@ module Manifold
         SQL
       end
 
+      def build_metric_merge_sql(group_name)
+        return "" unless valid_config? && @manifold_config["metrics"][group_name]
+        config = @manifold_config["metrics"][group_name]
+        ts_field = timestamp_field
+        interval = @manifold_config.dig("timestamp", "interval")
+        source = config["source"]
+        filter_clause = config["filter"] ? " WHERE #{config["filter"]}" : ""
+        metrics_struct = build_group_metrics_struct(group_name, config)
+        <<~SQL
+          MERGE #{@name}.#{metrics_table_name(group_name)} AS target
+          USING (
+            SELECT
+              id,
+              TIMESTAMP_TRUNC(#{ts_field}, #{interval}) AS timestamp,
+              STRUCT(#{metrics_struct}) AS metrics
+            FROM #{source}#{filter_clause}
+            GROUP BY id, timestamp
+          ) AS source
+          ON source.id = target.id AND source.timestamp = target.timestamp
+          WHEN MATCHED THEN
+            UPDATE SET metrics = source.metrics
+          WHEN NOT MATCHED THEN
+            INSERT ROW;
+        SQL
+      end
+
       private
 
       def valid_config?
@@ -105,6 +131,64 @@ module Manifold
         return first if joins.empty?
 
         "#{first}\n  #{joins.map { |table| "FULL OUTER JOIN #{table} USING (id, timestamp)" }.join("\n  ")}"
+      end
+
+      # Builds the inner struct fields for a metrics group
+      def build_group_metrics_struct(group_name, config)
+        condition_names = config["conditions"]&.keys || []
+        intersection_names = build_intersection_names(config)
+        field_names = condition_names + intersection_names
+        parts = field_names.map do |name|
+          expr = build_condition_expression(name, config)
+          aggregates = []
+          if config.dig("aggregations", "countif")
+            count_name = config["aggregations"]["countif"]
+            aggregates << "COUNTIF(#{expr}) AS #{count_name}"
+          end
+          if config.dig("aggregations", "sumif")
+            config["aggregations"]["sumif"].each do |metric, sum_cfg|
+              field = sum_cfg["field"]
+              aggregates << "SUM(IF(#{expr}, #{field}, 0)) AS #{metric}"
+            end
+          end
+          "STRUCT(#{aggregates.join(', ')}) AS #{name}"
+        end
+        parts.join(", ")
+      end
+
+      # Determines the condition expression, using a scalar function if args exist
+      def build_condition_expression(name, config)
+        cond_cfg = config["conditions"][name]
+        args = cond_cfg["args"]&.keys
+        if args && !args.empty?
+          "is#{name.capitalize}(#{args.join(', ')})"
+        else
+          cond_cfg["body"]
+        end
+      end
+
+      # Builds intersection condition names from breakouts
+      def build_intersection_names(config)
+        breakouts = config["breakouts"] || {}
+        groups = breakouts.keys
+        return [] if groups.size <= 1
+        (2..groups.size).flat_map do |size|
+          groups.combination(size).flat_map do |combo|
+            condition_sets = combo.map { |g| breakouts[g] }
+            combos = condition_sets.first.map { |c| [c] }
+            combos = condition_sets[1..].reduce(combos) do |acc, set|
+              acc.flat_map { |prev| set.map { |c| prev + [c] } }
+            end
+            combos.map { |conds| format_intersection_name(conds) }
+          end
+        end
+      end
+
+      # Formats intersection names (first lowercase, others capitalized)
+      def format_intersection_name(conds)
+        name = conds.first
+        conds[1..].each { |c| name += c.capitalize }
+        name
       end
     end
 
@@ -228,6 +312,12 @@ module Manifold
           "merge_dimensions" => dimensions_routine_attributes,
           "merge_manifold" => manifold_routine_attributes
         }.compact
+        # add metric merge routines
+        if @manifold_config&.dig("metrics")
+          @manifold_config["metrics"].each_key do |group|
+            routines["merge_#{group}"] = metric_routine_attributes(group)
+          end
+        end
         # add user-defined condition routines, if any
         conds = build_condition_routines
         routines.merge!(conds) unless conds.empty?
@@ -256,6 +346,19 @@ module Manifold
           "routine_type" => "PROCEDURE",
           "language" => "SQL",
           "definition_body" => "${file(\"${path.module}/routines/merge_manifold.sql\")}",
+          "depends_on" => ["google_bigquery_dataset.#{name}"]
+        }
+      end
+
+      # Builds attributes for a metric merge routine
+      def metric_routine_attributes(group_name)
+        {
+          "dataset_id" => name,
+          "project" => "${var.project_id}",
+          "routine_id" => "merge_#{group_name}",
+          "routine_type" => "PROCEDURE",
+          "language" => "SQL",
+          "definition_body" => "${file(\"${path.module}/routines/merge_#{group_name}.sql\")}",
           "depends_on" => ["google_bigquery_dataset.#{name}"]
         }
       end
