@@ -377,6 +377,15 @@ RSpec.describe Manifold::API::Workspace do
         expect(sql).to include("MERGE #{workspace.name}.Manifold AS target")
       end
 
+      it "generates metric merge SQL file for each metric group" do
+        expect(workspace.routines_directory.join("merge_taps.sql")).to be_file
+      end
+
+      it "includes the metric merge SQL in the generated file" do
+        sql = workspace.routines_directory.join("merge_taps.sql").read
+        expect(sql).to include("MERGE #{workspace.name}.TapsMetrics AS target")
+      end
+
       def configure_vector_service
         allow(Manifold::Services::VectorService).to receive(:new).and_return(vector_service)
         configure_vector_schema
